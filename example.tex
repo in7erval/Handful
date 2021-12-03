@@ -1,0 +1,505 @@
+\documentclass [a4paper,oneside,final,14pt]{extarticle}
+\include{inc/preamble}
+\usepackage [utf8]{inputenc}
+
+% \sloppy
+\fussy
+\makeatletter
+
+\begin{document}
+ТИТУЛЬНИК
+\bigskip
+\noindent Однажды в студеную зимнюю пору, \\
+Сижу за решеткой в темнице сырой.\\
+Гляжу, поднимается медленно в гору\\
+Вскормленный в неволе орел молодоц,\\
+И, шествую важно, в спокойствии чинном\\
+Мой грустный товарищ, махая крылом,\\
+В больших сапогах, в полушибке овчинном\\
+Кровавую пищу клюет под окном.
+\bigskip
+
+\tableofcontents
+\section{First section} \label{first_section}
+Hello World!
+\subsection{First subsection}
+\section*{Not numbered section}
+\section{Second section}
+The subject discussed in Section \ref{first_section} on \pageref{first_section} is very interesting. Let me tell you why...
+\newcommand {\E}[0]{$E_8^{+++}$}
+\newcommand {\seclab}[1]{\section{Section: #1}}
+\seclab {Something}
+\seclab {Introduction}
+\let\oldsection\section
+\renewcommand {\section}[1]{\centerline{Section: #1}}
+
+\def \E {$E_8^{+++}$}
+\E
+
+\newenvironment{ruled}[0]{before\hrule}{after\hrule}
+
+
+\begin{ruled}
+some text	
+\end{ruled}
+
+\oldsection {TEsting}
+
+У попа {\it была} {\bf собака}
+
+В этой \itshape фразе почти все \bfseries
+набрано курсивом, \ttfamily но кое-что
+\upshape ещё и жирное, \rmfamily а где-то
+и вовсе \mdseries моноширинное.
+Тут сначала задали курсив, потом жирное, затем моноширинное (жирность перестала работать), 
+потом отменили курсив и вернули к обычной, затем последним словом сняли жирность.
+\normalfont
+
+\textbackslash sffamily - {\sffamily гарнитура без засечек}
+
+\textbackslash ttfamily - {\ttfamily моноширинная гарнитура }
+
+\textbackslash rmfamily - {\rmfamily обычная гарнитура }
+
+\textbackslash bfseries - {\bfseries включение жирности }
+
+\textbackslash mdseries - {\mdseries отмена жирности }
+
+\textbackslash itshape - {\itshape курсив }
+
+\textbackslash slshape - {\slshape наклонный шрифт }
+
+\textbackslash scshape - {\scshape капитель }
+
+\textbackslash upshape - {\upshape обычное начертание }
+
+Команды \ttfamily {
+\textbackslash textbf\{\}, 
+\textbackslash texttt\{\},
+\textbackslash textsf\{\}, 
+\textbackslash textrm\{\},
+\textbackslash textmd\{\},
+\textbackslash textit\{\},
+\textbackslash textsl\{\},
+\textbackslash textsc\{\},
+\textbackslash textup\{\},
+\textbackslash textnormal\{\},
+\textbackslash emph\{\}
+}\normalfont
+
+Пример \texttt{\textbackslash emph\{\}}: \emph{ВыДеЛеНиЕ}
+  
+\subsubsection{Пример с окружением}
+
+Сначала\begin{bfseries} жирное, потом\begin{itshape} курсив, потом\end{itshape}
+без курсива, потом\end{bfseries} без жирного.
+
+\subsubsection{Устаревшая форма команд}
+
+Команды \ttfamily {
+\textbackslash bf, \textbackslash it, \textbackslash sl, \textbackslash sc,
+\textbackslash sf, \textbackslash tt, \textbackslash rm
+}
+
+\bf Их эффект не может быть наложен! \label{label1}
+\normalfont
+\subsection{Размер шрифта} 
+\subsubsection{Размеры шрифта и команды}
+
+\ttfamily{\textbackslash tiny} - \begin{tiny} tiny \end{tiny}
+
+\ttfamily{\textbackslash scriptsize} - \begin{scriptsize} scriptsize \end{scriptsize}
+
+\ttfamily{\textbackslash footnotesize} - \begin{footnotesize} footnotesize \end{footnotesize}
+
+\ttfamily{\textbackslash small} - \begin{small} small \end{small}
+
+\ttfamily{\textbackslash normalsize} - \begin{normalsize} normalsize \end{normalsize}
+
+\ttfamily{\textbackslash large} - \begin{large} large \end{large}
+
+\ttfamily{\textbackslash Large} - \begin{Large} Large \end{Large}
+
+\ttfamily{\textbackslash LARGE} - \begin{LARGE} LARGE \end{LARGE}
+
+\ttfamily{\textbackslash huge} - \begin{huge} huge \end{huge}
+
+\ttfamily{\textbackslash Huge} - \begin{Huge} Huge \end{Huge}
+
+\normalfont
+
+\subsection{Рубрикация}
+
+\chapter{Введение}
+
+
+Как нам начать писать курсач? Наверное просто стоит начать хотя бы что-то писать, а то какая-то дичь вообще получается.
+
+\oldsection{Постановка задачи}
+
+\oldsection{ПУНКТЫ}
+
+\begin{itemize}
+	\item 1
+	\item 2
+	\item 3
+	\begin{itemize}
+	\item 3.1
+	\end{itemize}
+\end{itemize}
+
+\begin{enumerate}
+	\item 1
+	\item 2
+	\item 3
+	\begin{enumerate}
+		\item 3.1
+		\item 3.2
+	\end{enumerate}
+\end{enumerate}
+
+\begin{compactlist}
+	\item 1
+	\item 2
+	\item 3
+	\item 4
+\end{compactlist}
+
+
+
+ТЕКСТ ТЕКСТ \cite{kniga1}
+
+ТЕКСТ ТЕКСТ \cite{kniga2}
+
+\oldsection{ТАБЛИЦЫ И РИСУНКИ}
+
+
+
+\begin{table}[t]
+	\centering
+	\begin{tabular}
+		{|r|c|c|c|c|r|}
+		\hline No & Book & Author & Column1 & Column2 & Тираж \\ \hline 
+		1 & Книга &  F & \multicolumn{2}{c|}{FFFF 1111} & 10\,000 \\ \hline 
+	\end{tabular}
+	\caption{Название таблицы}
+	\label{table1}
+\end{table}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\textwidth]{testimage}
+	\caption{Название рисунка}
+	\label{ris1}
+\end{figure}
+
+Смари рис. \ref{ris1}!!!!
+
+\oldsection{ЛИСТИНГИ ПРОГРАММ}
+
+
+\begin{verbatim}
+	program example;
+	begin
+	{ This program just prints a message }
+		writeln('Hello world');
+	end.
+\end{verbatim}
+
+\begin{listing}[3]{1}
+	program example;
+	begin
+	{ This program just prints a message }
+		writeln('Hello world');
+	end.
+	end.
+\end{listing}
+
+\oldsection{СНОСКИ И ЗАМЕТКИ}
+
+Текст\footnote{сноска \label{my_footnote}} текст
+
+%Текст \footnotemark[\ref{my_footnote}].
+
+\marginpar[\hfill\attentionpicture]{\attentionpicture}
+
+\oldsection{МАТЕМАТИЧЬКА}
+
+Формула \begin{math} x^2 + y^2 = 0 \end{math} 
+\begin{displaymath}
+	x^2 + y^2 = 0	
+\end{displaymath}
+
+Формула \( x^2 + y^2 = 0 \) 
+\[ x^2 + y^2 = 0\]
+
+Формула $ x^2 + y^2 = 0$ $$ x^2 + y^2 = 0 $$
+
+Если функция \( F(x) \) является одной из первообразных функции \( f(x) \) на интервале
+\( (a, b) \), то
+\[\int f(x)\,dx=F(x)+C,\]
+где \(C\)~--- произвольная постоянная
+
+Пробелы
+\[ x\negthickspace x \]
+\[ x\negmedspace x \]
+\[ x\!x \]
+\[ xx \]
+\[ x\,x \]
+\[ x\:x \]
+\[ x\quad x \]
+\[ x\qquad x \]
+
+Формулы с текстом
+\[ V_\text{сближения} = V_\text{автомобиля} + V_\text{велосипедиста} \]
+
+Дроби
+
+\( \frac{x+\frac{1}{y}}{\frac{z+1}{3}-15} \)
+\[ \frac{x+\frac{1}{y}}{\frac{z+1}{3}-15} \]
+
+\[ \sqrt{1 - \sin^2 x} + \sqrt[4]{1 + \cos^2 x} = 0 \]
+
+\[ \sqrt{x_1 + \sqrt{x_2 + \sqrt{x_3 + \sqrt {x_4}}}} \]
+
+Интеграл 
+\[ \int_a^b f(x)\,dx \]
+\[ \int\limits_a^b f(x)\,dx \]
+\[ \iiint\limits_Vf(v) f(v),dv \]
+"Круглый" интеграл 
+\[ \oint_a^b f(x)\,dx \]
+\[ \oint\limits_a^b f(x)\,dx \]
+Сумма \[ \sum_{i=0}^{n} q_i \] \[ \sum\limits_{i=0}^{n} q_i \]
+
+Символы всякие полезные
+\newcommand\itemmathsign[1]{\ttfamily{\textbackslash #1}}
+\begin{compactlist}
+	\item \(\forall\) - \itemmathsign{forall}
+	\item $\in$ - \itemmathsign{in}
+	\item $\subset$ - \itemmathsign{subset}
+	\item $\leq$ - \itemmathsign{leq}
+	\item $\cdot$ - \itemmathsign{cdot}
+	\item $\ll$ - \itemmathsign{ll}
+	\item $\vee$ - \itemmathsign{vee}
+	\item $\perp$ - \itemmathsign{perp}
+	\item $\lfloor$ - \itemmathsign{lfloor}
+	\item $\pm$ - \itemmathsign{pm}
+	\item $\oplus$ - \itemmathsign{oplus}
+	\item $\odot$ - \itemmathsign{odot}
+	\item $\exists$ - \itemmathsign{exists}
+	\item $\ni$ - \itemmathsign{ni}
+	\item $\supset$ - \itemmathsign{supset}
+	\item $\geq$ - \itemmathsign{geq}
+	\item $\leqslant$ - \itemmathsign{leqslant}
+	\item $\geqslant$ - \itemmathsign{geqslant}
+	\item $\approx$ - \itemmathsign{approx}
+	\item $\gg$ - \itemmathsign{gg}
+	\item $\infty$ - \itemmathsign{infty}
+	\item $\neq$ - \itemmathsign{neq}
+	\item $\times$ - \itemmathsign{times}
+	\item $\circ$ - \itemmathsign{circ}
+	\item $\leftarrow$ - \itemmathsign{leftarrow}
+	\item $\Leftarrow$ - \itemmathsign{Leftarrow}
+	\item $\leftrightarrow$ - \itemmathsign{leftrigtharrow}
+	\item $\longleftarrow$ - \itemmathsign{longleftarrow}
+	\item $\Longleftarrow$ - \itemmathsign{Longleftarrow}
+	\item $\longleftrightarrow$ - \itemmathsign{longleftrightarrow}
+	\item $\Longleftrightarrow$ - \itemmathsign{Longleftrightarrow}
+	\item $\Leftrightarrow$ - \itemmathsign{Leftrightarrow}
+\end{compactlist}
+
+\[ \forall\varepsilon>0 \quad \exists\delta(\varepsilon)>0\;:\;\forall x 
+\; 0<|x-a|<\delta \Rightarrow |f(x)-b|<\varepsilon \]
+
+\begin{compactlist}
+	\item $\hat x$ - \itemmathsign{hat}
+	\item $\dot x$ - \itemmathsign{dot}
+	\item $\bar x$ - \itemmathsign{bar}
+	\item $\mathring x$ - \itemmathsign{mathring}
+	\item $\check x$ - \itemmathsign{check}
+	\item $\ddot x$ - \itemmathsign{ddot}
+	\item $\vec x$ - \itemmathsign{vec}
+	\item $\acute x$ - \itemmathsign{acute}
+	\item $\dddot x$ - \itemmathsign{dddot}
+	\item $\breve x$ - \itemmathsign{breve}
+	\item $\grave x$ - \itemmathsign{grave}
+	\item $\ddddot x$ - \itemmathsign{ddddot}
+	\item $\tilde x$ - \itemmathsign{tilde}
+	\item $1, 2, \ldots, n$ - \itemmathsign{ldots}
+	\item $1, 2, \cdots, n$ - \itemmathsign{cdots}
+	\item $\vdots$ - \itemmathsign{vdots}
+	\item $\ddots$ - \itemmathsign{ddots}
+	\item $(x+y)$ - \ttfamily{(x+y)}
+	\item $[x+y]$ - \ttfamily{[x+y]}
+	\item $\{x+y\}$ - \ttfamily{\textbackslash \{x + y\textbackslash \}}
+	\item $\langle x + y \rangle$ - \itemmathsign{langle} x + y \itemmathsign{rangle}
+	\item $\lfloor x + y \rfloor$ - \itemmathsign{lfloor} x + y \itemmathsign{rfloor}
+	\item $\lceil x + y \rceil$ - \itemmathsign{lceil} x + y \itemmathsign{lceil}
+\end{compactlist}
+
+\oldsection{Стили матем формул}
+
+\[1+\frac{1}{1+\frac{1}{1+\frac{1}{1 + \frac{1}{1+\frac{1}{x}}}}}\]
+\[1+\frac{1}{\displaystyle1+\frac{1}
+{\displaystyle1+\frac{1}
+{\displaystyle1 + \frac{1}
+{\displaystyle1+\frac{1}{x}}}}}\]
+
+\oldsection{Матрицы}
+
+\[ \left( \begin{matrix} 1 & 2 & 3 \\ x & y & z \\ a & b & c \\ \end{matrix} \right) \]
+
+\[
+\begin{pmatrix} a_1^1 & a_1^2 \\ a_2^1 & a_2^2 \end{pmatrix}
+\begin{bmatrix} a_1^1 & a_1^2 \\ a_2^1 & a_2^2 \end{bmatrix}
+\begin{vmatrix} a_1^1 & a_1^2 \\ a_2^1 & a_2^2 \end{vmatrix}
+\begin{Vmatrix} a_1^1 & a_1^2 \\ a_2^1 & a_2^2 \end{Vmatrix}
+\]
+
+% по умолчанию максимум -- 10 столбцов!
+% для расширения можно \setcounter{MaxMatrixCols}{20} 
+% но потом отменить, потому что тратится больше времени на вёрстку
+
+Маленькая матрица в строчке \(
+\left( \begin{smallmatrix}
+	a & b \\ c & d
+\end{smallmatrix}\right) 
+\)
+
+\oldsection{Системы уравнений}
+
+\subsection{Выравнивание формул}
+Тут выравнивание по знаку равенства:
+\[\begin{aligned}
+\sin x\pm\sin y &= 2\sin\frac{x\pm y}{2}\cos\frac{x\mp y}{2} \\
+\sin x\sin y &= \frac{1}{2}(\cos(x-y)-\cos(x+y)) \\
+\end{aligned}\]
+
+\subsection{Системы уравнений и неравенств}
+
+\[ \left\{\begin{aligned}
+	& x+y=5 \\
+	& x-2y=2
+\end{aligned}\right. \]
+
+\[ 
+	\sqrt{f(x)} > g(x) \Longleftrightarrow 
+	\left[ 
+	\begin{aligned}
+		& \left\{ 
+			\begin{aligned}
+				& f(x) > (g(x))^2 \\
+				& g(x) \geq 0
+			\end{aligned}
+		  \right . \\
+		& \left\{
+			\begin{aligned}
+				& f(x) \geq 0 \\
+				& g(x) < 0
+			\end{aligned} 
+		  \right . \\
+	\end{aligned} \right.
+\]
+
+\subsection{Перечисление случаев}
+
+\[ |x| = \begin{cases}
+ 		x, &x \ge 0, \\
+ 		-x, &x < 0	
+ \end{cases} \]
+ 
+ \oldsection{Играемся}
+ 
+ \begin{centering}
+ 
+Текст по центру
+ 
+ \end{centering}
+ 
+ А теперь нет
+ 
+ \hrulefill
+ 
+\null\hfill
+\begin{minipage}{0.3\textwidth}
+ 	Сдвиг вправо и текст текст ектстект сткттадылва офжвафжывадфы вдафдвоадфодывоад фодывод афо дывода жфдывалоф
+\end{minipage}\\
+ 
+\null\hfill
+\begin{boxedminipage}{0.3\textwidth}
+ 	Сдвиг вправо и бордюр текст текстект сте ктстктта дылва офж вафжы вадфывдафдвоа дфодыв оадфо дыводаф одыво дажфд
+\end{boxedminipage}
+
+\subsection{Пример титульника}
+\clearpage
+\thispagestyle{empty}
+\centerline{ИНСТИТУТ БРЕВЕН И СУЧКОВ РАН}
+\centerline{\hfill\hrulefill\hrulefill\hfill}
+\vfill
+\rightline{на правах рукописи}
+\vfill
+\vfill
+\large
+\centerline{{\bf Юдаков} Дмитрий Игоревич}
+\vfill
+\Large
+\begin{centering}
+	{\bf Качение бревна\\ по наклонной плоскости\\
+	с учётом сучковатости\\}
+\end{centering}
+\normalsize
+\vfill
+\centerline{Специальность 66.69.99~--- }
+\centerline{механические и кинематические свойства}
+\centerline{сучковатых бревен}
+\vfill
+\centerline{Диссертация на соискание учёной степени}
+\centerline{кандидата бревнологических наук}
+\vfill
+\vfill
+\begin{flushright}
+Научный руководитель:\\
+д.\,бр.\,н.~Персикович~И.\,И.
+\end{flushright}
+\vfill
+\vfill
+\centerline{Москва~--- 2021}
+
+\tableofcontents
+
+
+ddddd \ref{label1}
+
+\appendix
+
+
+\chapter{xxx}
+
+xxxxjjjj
+
+\renewcommand\bibname{Cписок литературы}
+\begin{thebibliography}{00}
+
+	\bibitem{kniga1} ДЖЫЛВАОЫЛВАЫЖЛВАЫД
+	
+	\bibitem{kniga2} ЛДРВАРЫРВРАРЫДВА 
+	
+\end{thebibliography}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%\include{inc/preamble}

@@ -1,0 +1,542 @@
+\section{Методы детектирование кисти человека в системах человеко-машинного взаимодействия}
+
+Человеко-машинное взаимодействие (Human-computer interaction - HCI) - это междисциплинарное
+научное направление, изучающее взаимодействие между людьми и машинами. Предметом HCI является
+изучения, планирование и разработка методов взаимодействия человека с машиной, где в роли машины
+может выступать персональный компьютер, компьютерная система больших масштабов, система 
+управления процессами и т.д. \cite{dix}. Под взаимодействием понимается любая коммуникация между
+человеком и машиной. Одним из методов HCI, получившим широкое распространение в последние годы,
+является взаимодействие, основанное на жестах человека \cite{jiangqin, sanna}. 
+
+Задачу распознавания жестов руки можно разделить на подзадачи:
+\begin{enumerate}
+	\item Отделение кисти руки от остальной части изображения.
+	\item Построение контура кисти.
+	\item Нахождение ключевых точек на кисти.
+	\item Классификация жеста исходя из статического или динамического расположения точек.
+\end{enumerate}
+
+Первая подзадача, а именно детектирование кисти человека в кадре является ключевой, поскольку
+от качества её решения зависит качество выполнения остальных подзадач.
+Рассмотрим первую подзадачу, а именно детектирование кисти человека в кадре.
+
+Существует множество решений этой подзадачи. Наиболее популярными из них являются 
+непосредственное отделение фона изображения, распознавание цвета 
+кожи в кадре и метод Оцу. 
+Подробно рассмотрим каждое из них.
+
+\subsection{Непосредственное отделение фона изображения}
+
+В данном решении принимается, что в кадре движется только рука, а остальные части
+тела, включая фон, остаются неподвижными. Таким образом, если вначале инициализировать фон как
+$bgr(x, y)$, а новое изображение с жестом рассматривать как $fgr(x, y)$, то изолированный жест
+можно принять как разность между этими изображениями: 
+\begin{equation} gst_i(x,y)=fgr_i(x,y)-bgr(x,y). \label{first}\end{equation}
+
+Полученный разностный жест переднего плана преобразуется в бинарное изображение, устанавливая
+соответствующий порог. Поскольку фон не является полностью статичным, например, если камера
+удерживается в руках оператора, то добавляется шумовая часть. Чтобы получить изображение руки
+без шумов, этот метод сочетается с распознаванием кожи человека. Чтобы удалить этот шум, 
+применяется анализ связанных компонентов, чтобы заполнить пустоты, если применяется заливка
+какой-либо области, а также для получения чётких краёв применяется морфологическая обработка.
+
+Недостаток данного решения состоит в том, что довольно сложно отделить фон, даже если он задан,
+поскольку не ясно какие из пикселей изменились, а какие остались прежними из-за тени, смещения
+фокуса, изменения экспозиции и т.д. Даже если зафиксировать все параметры камеры, то тень так
+или иначе испортит качество решения.
+
+Приведём два примера отделения кисти от фона изображения. На рис. \ref{pix1} изображены два
+изображения, одно из которых является инициализированным фоном, а второе -- кисть на этом фоне.
+
+\addtwoimghere{pix/BG_result}{pix/FG_result}{Инициализированный фон (а) и изображение
+кисти на нём (б).}{pix1}
+
+Для отделения кисти первым способом воспользуемся встроенным в библиотеку OpenCV методом
+{\tt absdiff()}, код для которого представлен ниже:
+\begin{minted}[mathescape, 
+				linenos, 
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+bg = cv2.imread('BG_result.png') # фон
+fg = cv2.imread('FG_result.png') # фон с кистью
+diff = cv2.absdiff(fg, bg) # вычисляем разность изображений
+mask = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) # переводим в ЧБ
+th = 30
+imask = mask > th
+canvas = np.zeros_like(fg, np.uint8)
+canvas[imask] = fg[imask]
+cv2.imwrite('result.png', canvas) # сохраняем кисть
+\end{minted}
+
+Второй способ будет заключаться в следующем. Пусть даны два пикселя 
+\begin{equation}
+	p_1 = (r_1, g_1, b_1)~~и~~p_2 = (r_2, g_2, b_2),
+	\label{pixels_bg}
+\end{equation}
+тогда различие между ними будем определять как
+\begin{equation}
+	D = \sqrt{(r_2 - r_1)^2 + (g_2 - g_1)^2 + (b_2 - b_1)^2}.
+	\label{distance}
+\end{equation}
+Затем создаём битовую маску $M$, в которой значения определяются как
+\begin{equation}
+	M_{(i,j)}=\left\{\begin{aligned}
+	1,~& D > Threshold\\
+	0,~& D \leq Threshold
+\end{aligned}\right. 
+\label{bite-mask}
+\end{equation}
+Код для этого метода представлен ниже:
+\begin{minted}[mathescape, 
+				linenos, 
+				gobble=4, 
+				frame=lines,
+				framesep=2mm]{python}
+    bg = cv2.imread('BG_result.png')
+    fg = cv2.imread('FG_result.png')
+    def difference(pixel1, pixel2):
+        return math.sqrt((int(pixel1[0]) - int(pixel2[0]))**2 +
+                         (int(pixel1[1]) - int(pixel2[1]))**2 +
+                         (int(pixel1[2]) - int(pixel2[2]))**2)
+
+    THRESHOLD = 60
+    mask = np.zeros_like(bg, np.uint8)
+    for i in range(len(bg)):
+        for j in range(len(bg[i])):
+            mask[i][j] = 1 if \
+            	difference(bg[i][j], fg[i][j]) > THRESHOLD else (0, 0, 0)
+    cv2.imwrite('result1.png', mask)
+\end{minted}
+
+Результаты работы первого и второго метода представлены на рис. \ref{pix2}.
+\addtwoimghere{pix/result}{pix/result1}{Результат первого метода (а) и второго (б).}{pix2}
+
+Как можно видеть, оба метода не совсем точно отделяют нужный объект от фона, поэтому 
+рассмотрим метод распознавания кожи в HSV и YCbCr цветовых моделях.
+
+\newpage
+
+\subsection{Метод распознавания кожи в HSV и YCbCr цветовых моделях}
+
+Для того, чтобы исследовать соответствующие методы следует познакомиться
+ с цветовыми моделями, которые они используют, поподробнее.
+
+\subsubsection{Цветовая модель HSV}
+
+{\bf HSV} ({\it Hue, Saturation, Value}) или {\bf HSB} ({\it Hue, Saturation, Brightness}) --
+цветовая модель, в которой координатами цвета являются:
+\begin{enumerate}
+	\item {\bf H}ue -- цветовой тон, (например, красный, зелёный или сине-голубой). Варьируется 
+в пределах 0-360\textdegree, однако иногда приводится к диапазону 0-100 или 0-1.
+	\item {\bf S}aturation -- насыщенность. Варьируется в пределах 0-100 или 0-1. Чем больше
+этот параметр, тем "чище"\ цвет, поэтому иногда называют {\it чистотой цвета}. А чем ближе этот
+параметр к нулю, тем ближе цвет к нейтральному серому.
+	\item {\bf V}alue или {\bf B}rightness -- яркость. Также задаётся в пределах 0-100 или 0-1.
+\end{enumerate}
+
+Простейший способ отобразить HSV в трёхмерное пространство -- воспользоваться цилиндрической
+системой координат (рис. \ref{hsv-cylinder}). 
+Здесь координата H определяется полярным углом, S -- радиус-вектором, а V --
+Z-координатой. То есть, оттенок изменяется при движении вдоль окружности цилиндра, насыщенность 
+-- вдоль радиуса, а яркость -- вдоль высоты. Несмотря на "математическую"\ точность, у такой
+модели есть существенный недостаток: на практике количество различимых глазом уровней 
+насыщенности и оттенков уменьшается при приближении яркости (V) к нулю. Также на малых S и V 
+появляются существенные ошибки округления при переводе RGB в HSV и наоборот. Поэтому чаще
+применяется коническая модель (рис. \ref{hsv-cone}).
+
+\addimghere{pix/HSV_cylinder}{0.5}{HSV в цилиндрической системе координат.}{hsv-cylinder}
+
+Как и в цилиндре, в конической модели оттенок изменяются по окружности конуса. Насыщенность 
+цвета возрастает с отдалением от оси конуса, а яркость -- с приближением к его основанию. Иногда
+вместо конуса используется шестиугольная правильная пирамида.
+
+\addimghere{pix/HSV_cone}{0.5}{HSV в конической модели.}{hsv-cone}
+
+Для перевода RGB $\Rightarrow$ HSV будем считать, что
+$$
+\begin{aligned}
+	&H \in [0, 360], \\
+	&S, V, R, G, B \in [0, 1].
+\end{aligned}
+$$
+Пусть $MAX=max(R, G, B)$, а $MIN=min(R, G, B)$.
+Тогда
+\begin{equation}
+	H=\left\{\begin{aligned}
+	&60 \cdot \frac{G-B}{MAX-MIN}+0,~ если~MAX=R~и~G \geq B \\
+	&60 \cdot \frac{G-B}{MAX-MIN}+360,~ если~MAX=R~и~G < B \\
+	&60 \cdot \frac{B-R}{MAX-MIN}+120,~ если~MAX=G \\
+	&60 \cdot \frac{R-G}{MAX-MIN}+240,~ если~MAX=B
+\end{aligned}\right. 
+\label{h-in-hsv}
+\end{equation}
+\begin{equation}
+	S=\left\{\begin{aligned}
+	&0,~если~MAX=0, \\
+	&1-\frac{MIN}{MAX},~иначе
+\end{aligned}\right.
+\label{s-in-hsv}
+\end{equation}
+\begin{equation}
+	V=MAX
+	\label{v-in-hsv}
+\end{equation}
+
+Можно заметить, что уравнение (\ref{h-in-hsv}) не определено, когда $MAX=MIN$, поэтому существуют другие
+уравнения:
+\begin{equation}
+	\begin{aligned}
+	&H=\arccos\frac{0.5\cdot((R-G)+R-B)}{\sqrt{(R-G)^2 + (R-B) + (G-B)}} \\
+	&S=1-3\frac{min(R,G,B)}{R+G+B} \\
+	&V=\frac{1}{3}(R+G+B)
+\end{aligned}
+\label{hsv-equations}
+\end{equation}
+
+Для перевода HSV $\Rightarrow$ RGB будем считать, что $H \in [0,360]$, $S \in [0, 100]$ и
+$V \in [0, 100]$. Если
+\begin{equation}
+	\begin{aligned}
+	&H_i = \left\lfloor \frac{H}{60} \right\rfloor~mod~6, \\
+	&V_{min} = \frac{(100-S)V}{100}, \\
+	&a = (V-V_{min})\frac{H~mod~60}{60}, \\
+	&V_{inc} = V_{min} + a, \\
+	&V_{dec} = V-a,
+\end{aligned}
+\label{hsv-to-rgb}
+\end{equation}
+тогда по таблице \ref{rgb-hsv-table} выбираем нужные значения. Полученные значения красного, зелёного
+и синего каналов RGB исчисляются в процентах. Чтобы привести их в соответствие распространённому
+представлению COLORREF необходимо умножить каждое из них на $\displaystyle\frac{255}{100}$.
+При целочисленном кодировании для каждого цвета в HSV есть соответствующий цвет в RGB. Однако
+обратное утверждение не является верным: некоторые цвета в RGB нельзя выразить в HSV так, чтобы
+значение каждого компонента было целым. Фактически, при таком кодировании доступна только
+$\displaystyle\frac{1}{256}$ часть цветового пространства RGB. Пример изображения в HSV
+изображён на рисунке \ref{rgb-hsv-pic}.
+\newpage
+\begin{table}[ht]
+	\centering
+	\begin{tabular}
+		{|c|c|c|c|}
+		\hline $H_i$ & R & G & B \\ \hline 
+		0 & $V$ & $V_{inc}$ & $V_{min}$ \\ \hline 
+		1 & $V_{dec}$ & $V$ & $V_{min}$ \\ \hline 
+		2 & $V_{min}$ & $V$ & $V_{inc}$ \\ \hline 
+		3 & $V_{min}$ & $V_{dec}$ & $V$ \\ \hline 
+		4 & $V_{inc}$ & $V_{min}$ & $V$ \\ \hline 
+		5 & $V$ & $V_{min}$ & $V_{dec}$ \\ \hline 
+	\end{tabular}
+	\caption{Таблица значений RGB для перевода из HSV.}
+	\label{rgb-hsv-table}
+\end{table}
+
+\addtwoimghere{pix/FG_result}{pix/hsv_example}{Изображение в RGB (а) и HSV (б).}{rgb-hsv-pic}
+
+\subsubsection{Цветовая модель YCbCr}
+
+Известно, что органы зрения человека менее чувствительны к цвету предметов, чем к их яркости. В
+цветовом пространстве RGB все три цвета считаются одинаково важными, и они обычно сохраняются
+с одинаковым разрешением. Однако можно отобразить цветное изображение более эффективно, 
+отделив светимость от цветовой информации и представив её с большим разрешением, чем цвет.
+Цветовое пространство $YC_BC_R$ и его вариации является популярным методом эффективного
+представления цветных изображений.
+
+$YC_BC_R$ -- семейство цветовых пространств, которые используются для передачи цветных
+изображений в компонентном видео и цифровой фотографии. Является частью рекомендации 
+МСЭ-R ВT.601 при разработке стандарта видео Всемирной цифровой организации и фактически
+является масштабированной и смещённой копией YUV. 
+
+$Y$ -- компонента яркости, $C_B$ -- синий компонент цветности, $C_R$ -- красный компонент
+цветности.
+
+Преобразование RGB $\Rightarrow YC_BC_R$ можно описать следующей
+формулой:
+
+\begin{equation}
+\begin{pmatrix} Y \\ C_B \\ C_R \end{pmatrix}
+=
+\begin{pmatrix} 16 \\ 128 \\ 128 \end{pmatrix} + 
+\begin{pmatrix}
+	65.481 & 128.553 & 24.996\\
+	-37.797 & -74.203 & 112\\
+	112 & -93.786 & -18.214
+\end{pmatrix}
+\cdot
+\begin{pmatrix} R \\ G \\ B\end{pmatrix}
+\label{rgb-to-ycbcr}
+\end{equation}
+
+Пример изображения в $YC_BC_R$ изображен на рис. 
+\ref{rgb-ycbcr-pic}.
+
+\addtwoimghere{pix/FG_result}{pix/ycbcr_example}{Изображение в RGB (а) и $YC_BC_R$ (б).}{rgb-ycbcr-pic}
+
+\subsubsection{Использование цветовых моделей RGB и YCrCb для распознавания кожи.}
+
+Для того чтобы отделить кожу от остальной части изображения 
+используют определённые диапазоны составляющих цветовых моделей, 
+которые находятся эмпирически или итеративно. В первом случае путём 
+проб и ошибок подбираются значения составляющих. Можно заметить,
+что при данном подходе кожа будет иметь разные цветовые диапазоны
+при разном освещении. Покажем это. Зададим диапазон для 
+изображения в HSV цветовой модели как
+
+$$
+\begin{aligned}
+	&0 \leq H \leq 200, \\
+	&15 \leq S \leq 255, \\
+	&80 \leq V \leq 255,
+\end{aligned}
+$$
+и, запустив код ниже с двумя разными изображениями одной и той же
+кисти, получим рис. \ref{hsv-del-pic}.
+
+\begin{minted}[mathescape, 
+				linenos, 
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+import cv2
+import numpy as np
+
+LOWER, UPPER = np.array([0, 15, 80], dtype='uint8'), \
+               np.array([200, 255, 255], dtype='uint8')
+
+INPUT_TO_OUTPUT = {'image3.jpg': 'hsv_del1.png',
+                   'image7.jpg': 'hsv_del2.png'}
+
+def HSV_skin_detection_mask_first(image):
+    converted = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    skinMask = cv2.inRange(converted, LOWER, UPPER)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+    skinMask = cv2.erode(skinMask, kernel, iterations=2)
+    skinMask = cv2.dilate(skinMask, kernel, iterations=2)
+    skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
+    return skinMask
+
+
+for filename_input, filename_output in INPUT_TO_OUTPUT.items():
+    img = cv2.imread(filename_input)
+    hsv_mask = HSV_skin_detection_mask_first(img)
+    cv2.imwrite(filename_output, cv2.bitwise_and(img, img, mask=hsv_mask))
+\end{minted}
+
+Можно видеть, что на первом изображении фон отделился практически 
+идеально, но на втором видны фрагменты фона.
+
+\newpage
+
+\addtwoxtwoimghere{pix/image3}{pix/hsv_del1}{pix/image7}{pix/hsv_del2}{Изображения с удалённым
+фоном в HSV.}{hsv-del-pic}
+
+Для цветовой модели YCbCr в статье \cite{ycbcr-bib} предложили два 
+варианта диапазона компонент (\ref{ycbcr-diap1}) и (\ref{ycbcr-diap2}):
+
+\begin{equation}
+	\begin{aligned}
+		&80 < Y \leq 255, \\
+		&85 < C_b < 135, \\
+		&135 < C_r < 180 
+	\end{aligned}
+	\label{ycbcr-diap1}
+\end{equation}
+
+\begin{equation}
+	\begin{aligned}
+		&Y \in \forall,\\
+		&77 \leq C_b \leq 127, \\
+		&133 \leq C_r \leq 173 
+	\end{aligned}
+	\label{ycbcr-diap2}
+\end{equation}
+
+Выполнив код ниже, получаем сравнение двух методов на рисунке \ref{ycbcr-del-pic}.
+
+\begin{minted}[mathescape, 
+				linenos, 
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+import cv2
+
+LOWER_YCr_Cb1, UPPER_YCr_Cb1 = (79, 89, 134), \
+                               (255, 134, 179)
+LOWER_YCr_Cb2, UPPER_YCr_Cb2 = (0, 77, 133), \
+                               (255, 127, 173)
+INPUT_TO_OUTPUT = {'image3.jpg': ['ycbcr_del1_1.png', 'ycbcr_del1_2.png'],
+                   'image7.jpg': ['ycbcr_del2_1.png', 'ycbcr_del2_2.png']}
+
+def YCrCb_skin_detection_mask(image, ex: int):
+    img_YCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
+    img_YCrCb = cv2.GaussianBlur(img_YCrCb, (5, 5), 5)
+    if ex == 1:
+        skinMask = cv2.inRange(img_YCrCb, LOWER_YCr_Cb1, UPPER_YCr_Cb1)
+    else:
+        skinMask = cv2.inRange(img_YCrCb, LOWER_YCr_Cb2, UPPER_YCr_Cb2)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+    skinMask = cv2.erode(skinMask, kernel, iterations=3)
+    skinMask = cv2.dilate(skinMask, kernel, iterations=3)
+    skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
+    return skinMask
+
+for filename, outputs in INPUT_TO_OUTPUT.items():
+    img = cv2.imread(filename)
+    for i, output in enumerate(outputs):
+        ycrcb_mask = YCrCb_skin_detection_mask(img, i)
+        image_skin = cv2.bitwise_and(img, img, mask=ycrcb_mask)
+        cv2.imwrite(output, image_skin)
+\end{minted}
+
+\newpage
+
+\addtwoxtwoimghere{pix/ycbcr_del1_1}{pix/ycbcr_del1_2}
+{pix/ycbcr_del2_1}{pix/ycbcr_del2_2}{Изображения с удалённым
+фоном в YCbCr.}{ycbcr-del-pic}
+
+Легко видеть, что оба диапазона работают не идеально, но первый 
+показал себя намного лучше. 
+
+Таким образом, можно сделать вывод, что для детектирования цвета кожи 
+лучше брать изображение в цветовой модели HSV. 
+
+Рассмотрим следующий метод отделения фона изображения, а именно метод
+Оцу.
+
+\subsection{Метод Оцу}
+
+В 1979 году Нобуюки Оцу опубликовал статью \cite{otsu} метода порогового 
+разделения, основываясь на гистограмме серых цветов изображения. 
+
+Метод Оцу -- это алгоритм вычисления порога бинаризации для полутонового
+изображения, используемый в области компьютерного распознавания образов
+и обработки изображений для получения чёрно-белых изображений. Алгоритм
+позволяет разделить пиксели двух классов ("полезные"\ и "фоновые"), 
+рассчитывая такой порог, чтобы внутриклассовая дисперсия была
+минимальной.
+
+Пусть пиксели изображения представлены в $L$ уровнях серого 
+$[1, 2, ..., L]$. Количество пикселей уровня $i$ обозначим как $n_i$, а
+количество всех пикселей как $$N = n_1 + n_2 + ... + n_L.$$ Для того
+чтобы упростить алгоритм гистограмма монохромного изображения 
+нормализована и рассматривается как распределение вероятностей:
+\begin{equation}
+	p_i=n_i/N,~~~p_i \geq 0,~~\sum_{i=1}^L{p_i}=1.
+	\label{probab}
+\end{equation}
+Теперь предположим, что мы разделили пиксели на два класса $C_0$ и $C_1$ 
+(фон и объект) по пороговому значению $k$. $C_0$ обозначает пиксели с
+уровнями $[1, ..., k]$, а $C_1$ -- пиксели с уровнями $[k+1, ..., L]$.
+Следовательно, вероятности класса и средний уровень, соответственно,
+задаются как
+\begin{equation}
+	\omega_0=\sum^k_{i=1}{p_i}=\omega(k)
+	\label{w_0}
+\end{equation}
+\begin{equation}
+	\omega_1=\sum^L_{i=k+1}{p_i}=1-\omega(k)
+	\label{w_1}
+\end{equation}
+и
+\begin{equation}
+	\mu_0=\sum^k_{i=1}{\frac{ip_i}{\omega_0}}=\frac{\mu(k)}{\omega(k)}
+	\label{mu_0}
+\end{equation}
+\begin{equation}
+	\mu_1=\sum^L_{i=k+1}{\frac{ip_i}{\omega_1}}=\frac{\mu_T-\mu(k)}
+	{1-\omega(k)},
+	\label{mu_1}
+\end{equation}
+где
+\begin{equation}
+	\omega(k)=\sum^k_{i=1}{p_i}
+	\label{omega_k}
+\end{equation}
+и
+\begin{equation}
+	\mu(k)=\sum^k_{i=1}{ip_i}.
+	\label{mu_k}
+\end{equation}
+$\omega(k)$ и $\mu(k)$ являются кумулятивными моментами нулевого и 
+первого порядка соответственно, а
+\begin{equation}
+	\mu_T=\mu(L)=\sum^L_{i=1}{ip_i}
+	\label{mu_T}
+\end{equation}
+является общим средним уровнем изначального изображения. Легко можно
+доказать, что следующие уравнения справедливы для любого $k$:
+\begin{equation}
+	\omega_0\mu_0+\omega_1\mu_1=\mu_T,~~~~\omega_0+\omega_1=1.
+	\label{sum_otsu}
+\end{equation} 
+Дисперсии классов определяются как
+\begin{equation}
+	\sigma_0^2=\sum_{i=1}^k{\frac{(i-\mu_0)^2p_i}{\omega_0}},
+	\label{disp1}
+\end{equation}
+\begin{equation}
+	\sigma_1^2=\sum_{i=k+1}^L{\frac{(i-\mu_1)^2p_i}{\omega_1}}.
+\end{equation}
+Оцу показал, что минимизация дисперсии {\it внутри} класса 
+равносильна максимизации дисперсии {\it между} классами:
+\begin{equation}
+	\sigma_W^2=\omega_0\sigma_0^2+\omega_1\sigma_1^2,
+	\label{sigma_w}
+\end{equation}
+\begin{equation}
+	\sigma_B^2=\omega_0(\mu_0-\mu_T)^2 + \omega_1(\mu_1-\mu_T)^2=
+	\omega_0\omega_1(\mu_1-\mu_0)^2,
+	\label{sigma_B}
+\end{equation}
+и
+\begin{equation}
+	\sigma_T^2=\sum^L_{i=1}{(i-\mu_T)^2p_i}
+\end{equation}
+являющееся внутриклассовой дисперсией, дисперсия между классами и общая
+дисперсия всех уровней соответственно.
+Таким образом, алгоритм можно записать как:
+
+Пусть дано монохромное изображение $G(i,j)$, $i=\overline{1, Height}$,
+$j=\overline{1,Width}$. Счётчик повторений $k=0$.
+\begin{enumerate}
+	\item Вычислить гистограмму $p(l)$ изображения и частоту $N(l)$ для
+каждого уровня интенсивности изображения $G$.
+	\item Вычислить начальные значения для $\omega_0(0),\omega_1(0)$ и 
+$\mu_1(),\mu_2(0)$.
+	\item Для каждого значения $t=\overline{1,max(G)}$ -- полутона --
+горизонтальная ось гистограммы:
+	\begin{enumerate}
+		\item Обновляем $\omega_0,\omega_1$ и $\mu_0,\mu_1$.
+		\item Вычисляем $\sigma_B^2(t)=\omega_0(t)\omega_1(t)[\mu_0(t)-
+\mu_1(t)]^2$.
+		\item Если $\sigma_B^2(t)$ больше, чем имеющееся, то запоминаем
+$\sigma_B^2$ и значение порога $t$.
+	\end{enumerate}
+	\item Искомый порог соответствует максимуму $\sigma_B^2(t)$.
+\end{enumerate}
+ 
+Диаграммы для изображений изображены на рис. \ref{histograms}. Как видно из рисунков, на данных изображениях довольно
+проблематично отделить фон от изображения какой-то единственной 
+пороговой величиной, поэтому и алгоритм Оцу на таких изображениях 
+сработает не очень хорошо, как это показано на рис. \ref{otsu-ex}.
+
+\addimgsandhistshere{pix/image3}{pix/histogram_for_3}
+{pix/image7}{pix/histogram_for_7}{Изображение 1 и 2
+и их гистограммы.}{histograms}
+
+\newpage
+
+\addtwoimghere{pix/otsu_exmpl_for_3}{pix/otsu_exmpl_for_7}{Результат работы программы с алгоритмом Оцу}{otsu-ex}
+
+
+Рассмотрев наиболее популярные методы отделения кисти человека от фона изображения, можно сделать
+вывод, что некоторые из методов работают наилучшим образом при специфических условиях, поэтому
+необходимо их дополнительное исследование. 
+
+
+
+
+
+
+
+
