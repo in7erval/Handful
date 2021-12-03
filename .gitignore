@@ -1,9 +1,8 @@
 *.dvi
-/_minted-пример
 *.py*
 *.synctex.gz
 *.toc
 *.aux
 *.log
 *.synctex(busy)
-
+*.out
