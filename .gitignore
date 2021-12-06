@@ -6,3 +6,4 @@
 *.log
 *.synctex(busy)
 *.out
+.DS_Store
