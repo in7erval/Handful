@@ -1,0 +1,4 @@
+
+vpython:S117"ZRename this local variable "img_YCrCb" to match the regular expression ^[_a-z][a-z0-9_]*$.(Û€šÄıÿÿÿÿ
+opython:S117"YRename this local variable "skinMask" to match the regular expression ^[_a-z][a-z0-9_]*$.(¡¾ıH
+vpython:S1542"_Rename function "YCrCb_skin_detection_mask" to match the regular expression ^[a-z_][a-z0-9_]*$.(Ïâ

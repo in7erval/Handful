@@ -1,0 +1,6 @@
+
+Bpython:S1481$"%Remove the unused local variable "i".(€¶ƒ›ûÿÿÿÿ
+=python:S1481%"%Remove the unused local variable "i".(¾ä³•
+=python:S1481&"%Remove the unused local variable "i".(úä¤
+kpython:S3776A"TRefactor this function to reduce its Cognitive Complexity from 21 to the 15 allowed.(íÀ’ 
+`python:S1226A"IIntroduce a new variable or use its initial value before reassigning 'i'.(íÀ’ 

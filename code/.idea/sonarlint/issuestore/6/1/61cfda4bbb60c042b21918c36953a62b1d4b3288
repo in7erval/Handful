@@ -1,0 +1,4 @@
+
+gpython:S5797""HReplace this expression; used as a condition it will always be constant.(”ç¿œ8†™ì¡Ï/
+Ppython:S1481G",Remove the unused local variable "img_name".(ÍÙà¿øÿÿÿÿ8†™ì¡Ï/
+xpython:S3776"TRefactor this function to reduce its Cognitive Complexity from 20 to the 15 allowed.(ÔÉÝ˜úÿÿÿÿ8†™ì¡Ï/

@@ -1,0 +1,5 @@
+
+spython:S117"WRename this local variable "imgRGB" to match the regular expression ^[_a-z][a-z0-9_]*$.(Ğ“™áúÿÿÿÿ
+spython:S117"WRename this local variable "ingHSV" to match the regular expression ^[_a-z][a-z0-9_]*$.(ÇÒ½ÿÿÿÿÿ
+wpython:S1542"ZRename function "detectHandsLandmarks" to match the regular expression ^[a-z_][a-z0-9_]*$.(ÑÀıÿÿÿÿ
+Gpython:S1481"*Remove the unused local variable "ingHSV".(ÇÒ½ÿÿÿÿÿ
