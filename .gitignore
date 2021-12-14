@@ -1,5 +1,4 @@
 *.dvi
-*.py*
 *.synctex.gz
 *.toc
 *.aux
@@ -7,3 +6,5 @@
 *.synctex(busy)
 *.out
 .DS_Store
+latex.py
+_minted-*
