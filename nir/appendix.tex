@@ -1,0 +1,75 @@
+\anonsection{ПРИЛОЖЕНИЯ}
+
+\subsection*{Приложение А. Код для распознавания кожи на изображении в цветовой модели HSV.}
+\addcontentsline{toc}{subsection}{Приложение А}
+
+\begin{minted}[mathescape, 
+				linenos, 
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+import cv2
+import numpy as np
+
+LOWER, UPPER = np.array([0, 15, 80], dtype='uint8'), \
+               np.array([200, 255, 255], dtype='uint8')
+
+INPUT_TO_OUTPUT = {'image3.jpg': 'hsv_del1.png',
+                   'image7.jpg': 'hsv_del2.png'}
+
+def HSV_skin_detection_mask_first(image):
+    converted = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    skinMask = cv2.inRange(converted, LOWER, UPPER)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+    skinMask = cv2.erode(skinMask, kernel, iterations=2)
+    skinMask = cv2.dilate(skinMask, kernel, iterations=2)
+    skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
+    return skinMask
+
+
+for filename_input, filename_output in INPUT_TO_OUTPUT.items():
+    img = cv2.imread(filename_input)
+    hsv_mask = HSV_skin_detection_mask_first(img)
+    cv2.imwrite(filename_output, cv2.bitwise_and(img, img, mask=hsv_mask))
+\end{minted}
+
+\newpage
+
+\subsection*{Приложение Б. Код для распознавания кожи на изображении в цветовой модели YCbCr.}
+\addcontentsline{toc}{subsection}{Приложение Б}
+
+\begin{minted}[mathescape, 
+				linenos, 
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+import cv2
+
+LOWER_YCr_Cb1, UPPER_YCr_Cb1 = (79, 89, 134), \
+                               (255, 134, 179)
+LOWER_YCr_Cb2, UPPER_YCr_Cb2 = (0, 77, 133), \
+                               (255, 127, 173)
+INPUT_TO_OUTPUT = {'image3.jpg': ['ycbcr_del1_1.png', 'ycbcr_del1_2.png'],
+                   'image7.jpg': ['ycbcr_del2_1.png', 'ycbcr_del2_2.png']}
+
+def YCrCb_skin_detection_mask(image, ex: int):
+    img_YCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
+    img_YCrCb = cv2.GaussianBlur(img_YCrCb, (5, 5), 5)
+    if ex == 1:
+        skinMask = cv2.inRange(img_YCrCb, LOWER_YCr_Cb1, UPPER_YCr_Cb1)
+    else:
+        skinMask = cv2.inRange(img_YCrCb, LOWER_YCr_Cb2, UPPER_YCr_Cb2)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+    skinMask = cv2.erode(skinMask, kernel, iterations=3)
+    skinMask = cv2.dilate(skinMask, kernel, iterations=3)
+    skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
+    return skinMask
+
+for filename, outputs in INPUT_TO_OUTPUT.items():
+    img = cv2.imread(filename)
+    for i, output in enumerate(outputs):
+        ycrcb_mask = YCrCb_skin_detection_mask(img, i)
+        image_skin = cv2.bitwise_and(img, img, mask=ycrcb_mask)
+        cv2.imwrite(output, image_skin)
+\end{minted}
+

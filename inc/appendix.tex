@@ -1,4 +1,7 @@
-Код реализации алгоритма и построения изображений:
+\anonsection{ПРИЛОЖЕНИЯ}
+
+\subsection*{Приложение А. Код реализации алгоритма Оцу и построения изображений.}
+\addcontentsline{toc}{subsection}{Приложение А}
 
 \begin{minted}[mathescape, 
 				linenos,
@@ -9,7 +12,12 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-
+INPUT_TO_OUTPUT = {'image3.jpg':
+                       {'histogram': 'histogram_for_3.png',
+                        'output': 'otsu_exmpl_for_3.png'},
+                   'image7.jpg':
+                       {'histogram': 'histogram_for_7.png',
+                        'output': 'otsu_exmpl_for_7.png'}}
 def get_min_max(image_flatten: np.ndarray) -> tuple:
     min_pix, max_pix = image_flatten[0], image_flatten[0]
     for pixel in image_flatten:
@@ -18,16 +26,12 @@ def get_min_max(image_flatten: np.ndarray) -> tuple:
         if pixel > max_pix:
             max_pix = pixel
     return min_pix, max_pix
-
-
 def create_histogram(image_flatten: np.ndarray, 
 					size: int, min_pix: int) -> np.array:
     hist = np.zeros(size)
     for pixel in image_flatten:
         hist[pixel - min_pix] += 1
     return hist
-
-
 def otsu_threshold(image: np.ndarray):
     img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     img_gray_flatten = img_gray.flatten()
@@ -55,31 +59,20 @@ def otsu_threshold(image: np.ndarray):
             threshold = i
     threshold += min_pixel
     return threshold
-
-
 def save_histogram(image, fname: str):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).flatten()
     plt.hist(image, 255)
     plt.xlim([0, 255])
     plt.savefig(fname)
     plt.show()
-
-
-INPUT_TO_OUTPUT = {'image3.jpg':
-                       {'histogram': 'histogram_for_3.png',
-                        'output': 'otsu_exmpl_for_3.png'},
-                   'image7.jpg':
-                       {'histogram': 'histogram_for_7.png',
-                        'output': 'otsu_exmpl_for_7.png'}
-                   }
-
 if __name__ == '__main__':
     for fname, outputs in INPUT_TO_OUTPUT.items():
         image = cv2.imread(fname)
         save_histogram(image, outputs['histogram'])
         thresh = otsu_threshold(image)
         print(f'Threshold = {thresh}')
-        ret, img_thresh = cv2.threshold(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), thresh, 255, cv2.THRESH_BINARY)
+        ret, img_thresh = cv2.threshold(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), 
+        	thresh, 255, cv2.THRESH_BINARY)
         imask = img_thresh == 255
         canvas = np.zeros_like(image, np.uint8)
         canvas[imask] = image[imask]
@@ -88,7 +81,8 @@ if __name__ == '__main__':
 
 \newpage
 
-Код реализации алгоритма Грэхема:
+\subsection*{Приложение Б. Код реализации алгоритма Грэхема.}
+\addcontentsline{toc}{subsection}{Приложение Б}
 
 \begin{minted}[mathescape, 
 				linenos,
@@ -170,3 +164,207 @@ def convex_hull(input_points: list) -> list:
     return [(p.x, p.y) for p in S]
 \end{minted}
 
+\newpage
+
+\subsection*{Приложение В. Код реализации алгоритма Джарвиса.}
+\addcontentsline{toc}{subsection}{Приложение В}
+
+\begin{minted}[mathescape, 
+				linenos,
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+# поиск самой левой нижней точки
+def left_index(points):
+    minn = 0
+    for i in range(1, len(points)):
+        if points[i].x < points[minn].x or \
+                (points[i].x == points[minn].x and
+                 points[i].y > points[minn].y):
+            minn = i
+    return minn
+
+# аналогично orientation в алгоритме Грэхема
+def orientation(p, q, r):
+    val = (q.y - p.y) * (r.x - q.x) - \
+          (q.x - p.x) * (r.y - q.y)
+    if val == 0:
+        return 0
+    elif val > 0:
+        return 1
+    return -1
+
+def convex_hull(init_points):
+    n = len(init_points)
+    if n < 3:
+        return
+    points = [Point(p[0], p[1]) for p in init_points]
+    l = left_index(points)
+    hull = []
+    p = l
+    q = 0
+    while True:
+        hull.append(p)
+        q = (p + 1) % n
+        for i in range(n):
+            if (orientation(points[p],
+                            points[i], points[q]) == 2):
+                q = i
+        p = q
+        if p == l:
+            break
+    return [(points[i].x, points[i].y) for i in hull]
+\end{minted}
+
+\newpage
+
+\subsection*{Приложение Г. Код реализации алгоритма Киркпатрика.}
+\addcontentsline{toc}{subsection}{Приложение Г}
+
+\begin{minted}[mathescape, 
+				linenos,
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+from collections import namedtuple
+from random import randint
+
+Point = namedtuple('Point', 'x y')
+
+def flipped(points):
+    return [Point(-point.x, -point.y) for point in points]
+
+def quickselect(ls, index, lo=0, hi=None, depth=0):
+    if hi is None:
+        hi = len(ls) - 1
+    if lo == hi:
+        return ls[lo]
+    if len(ls) == 0:
+        return 0
+    pivot = randint(lo, hi)
+    ls = list(ls)
+    ls[lo], ls[pivot] = ls[pivot], ls[lo]
+    cur = lo
+    for run in range(lo+1, hi+1):
+        if ls[run] < ls[lo]:
+            cur += 1
+            ls[cur], ls[run] = ls[run], ls[cur]
+    ls[cur], ls[lo] = ls[lo], ls[cur]
+    if index < cur:
+        return quickselect(ls, index, lo, cur-1, depth+1)
+    elif index > cur:
+        return quickselect(ls, index, cur+1, hi, depth+1)
+    else:
+        return ls[cur]
+
+def bridge(points, vertical_line):
+    candidates = set()
+    if len(points) == 2:
+        return tuple(sorted(points))
+    pairs = []
+    modify_s = set(points)
+    while len(modify_s) >= 2:
+        pairs += [tuple(sorted([modify_s.pop(), modify_s.pop()]))]
+    if len(modify_s) == 1:
+        candidates.add(modify_s.pop())
+    slopes = []
+    for pi, pj in pairs[:]:
+        if pi.x == pj.x:
+            pairs.remove((pi, pj))
+            candidates.add(pi if pi.y > pj.y else pj)
+        else:
+            slopes += [(pi.y-pj.y)/(pi.x-pj.x)]
+    median_index = len(slopes)//2 - (1 if len(slopes) % 2 == 0 else 0)
+    median_slope = quickselect(slopes, median_index)
+    small = {pairs[i] for i, slope in enumerate(slopes) if slope < median_slope}
+    equal = {pairs[i] for i, slope in enumerate(slopes) if slope == median_slope}
+    large = {pairs[i] for i, slope in enumerate(slopes) if slope > median_slope}
+    max_slope = max(point.y-median_slope*point.x for point in points)
+    max_set = [point for point in points if \
+    	point.y-median_slope*point.x == max_slope]
+    left = min(max_set)
+    right = max(max_set)
+    if left.x <= vertical_line < right.x:
+        return left, right
+    if right.x <= vertical_line:
+        candidates |= {point for _, point in large | equal}
+        candidates |= {point for pair in small for point in pair}
+    if left.x > vertical_line:
+        candidates |= {point for point, _ in small | equal}
+        candidates |= {point for pair in large for point in pair}
+    return bridge(candidates, vertical_line)
+
+def connect(lower, upper, points):
+    if lower == upper:
+        return [lower]
+    max_left = quickselect(points, len(points)//2-1)
+    min_right = quickselect(points, len(points)//2)
+    left, right = bridge(points, (max_left.x + min_right.x)/2)
+    points_left = {left} | {point for point in points if point.x < left.x}
+    points_right = {right} | {point for point in points if point.x > right.x}
+    return connect(lower, left, points_left) + connect(right, upper, points_right)
+
+def upper_hull(points):
+    lower = min(points)
+    lower = max({point for point in points if point.x == lower.x})
+    upper = max(points)
+    points = {lower, upper} | {p for p in points if lower.x < p.x < upper.x}
+    return connect(lower, upper, points)
+
+def convex_hull(init_points):
+    points = [Point(p[0], p[1]) for p in init_points]
+    upper = upper_hull(points)
+    lower = flipped(upper_hull(flipped(points)))
+    if upper[-1] == lower[0]:
+        del upper[-1]
+    if upper[0] == lower[-1]:
+        del lower[-1]
+    return upper + lower
+\end{minted}
+
+\newpage
+
+\subsection*{Приложение Д. Код функции очистки лишних точек дефектов выпуклости.}
+\addcontentsline{toc}{subsection}{Приложение Д}
+
+\begin{minted}[mathescape, 
+				linenos,
+				gobble=0, 
+				frame=lines,
+				framesep=2mm]{python}
+import math
+import numpy as np
+
+def squeeze(array):
+    array = array[0] if len(array) == 1 else array
+    return [p[0] for p in array] if len(array[0]) == 1 else array
+
+# "очистка" выпуклой оболочки до не больше 7 точек
+def clear_convex_hull(hull_index, contour):
+    distance_point = lambda p1, p2: \
+    	math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+    hull_index, contour = squeeze(hull_index), squeeze(contour)
+    ALPHA = 10
+    while True:
+        boundary = len(hull_index) - 1
+        clean_hull, i = [], 0
+        while i < boundary:
+            clean_hull.append(hull_index[i])
+            while i < boundary and \
+                    distance_point(contour[hull_index[i]],
+                    contour[hull_index[i + 1]]) < ALPHA:
+                i += 1
+            i += 1
+        if len(clean_hull) > 7:
+            ALPHA += 1
+        else:
+            break
+    return np.array(clean_hull[:-1]) if \
+        distance_point(contour[clean_hull[0]],
+        contour[clean_hull[-1]]) < ALPHA else np.array(clean_hull)
+\end{minted}

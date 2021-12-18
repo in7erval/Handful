@@ -1,8 +1,8 @@
-\section{Методы построения контура объекта на изображении}
+\section{МЕТОДЫ ПОСТРОЕНИЯ КОНТУРА ОБЪЕКТА НА ИЗОБРАЖЕНИИ}
 
 Отслеживание границ -- один из основных методов обработки оцифрованных
 двоичных изображений. Он производит последовательность координат или 
-цепных кодов от границ между связным компонентом
+цепных кодов от границ между связным компонентом.
 
 \subsection{Выделение границ с помощью оператора Кэнни}
 
@@ -73,45 +73,10 @@
 Перед применением детектора обычно преобразуют изображение в оттенки
 серого, чтобы уменьшить вычислительные затраты. 
 
-С помощью следующего кода построим примеры работы алгоритма Кэнни:
-
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines,
-				framesep=2mm]{python}
-import cv2
-from matplotlib import pyplot as plt
-
-CV2_CVT = [cv2.COLOR_BGR2RGB, cv2.COLOR_BGR2GRAY,
-           cv2.COLOR_BGR2HSV, cv2.COLOR_BGR2YCR_CB]
-TITLES = ['RGB', 'GRAY', 'HSV', 'YCbCr']
-def plot_images(img_name):
-    fig, axes = plt.subplots(2, 2)
-    fig.set_figwidth(10)
-    fig.set_figheight(10)
-    axes = axes.flatten()
-    img = cv2.imread(img_name)
-    img_blur = cv2.GaussianBlur(img, (5, 5), 2)
-    for i, ax in enumerate(axes):
-        ax.imshow(canny_wrapper(img_blur, CV2_CVT[i]),
-                  cmap='gray')
-        ax.set_title(TITLES[i])
-    for ax in axes:
-        ax.set_xticks([])
-        ax.set_yticks([])
-    plt.show()
-    fig.savefig(f'canny_image1.png')
-plot_image('image1.jpg')
-\end{minted}
-
-\newpage
-
-Пример работы оператора в цветовых моделях RBG, GRAY, HSV и YCbCr 
+Пример работы оператора Кэнни в цветовых моделях RBG, GRAY, HSV и YCbCr 
 показан на рис. \ref{canny-img1}.
 
-\addtwoimgherepro{pix/image1}{pix/canny_image1}{Пример 1 работы
-оператора Кэнни.}{canny-img1}{0.3}{0.8}
+
 
 Можно видеть, что алгоритм Кэнни довольно неплохо позволяет определить
 границы объекта. Но для задачи извлечения конфигурации кисти 
@@ -121,7 +86,7 @@ plot_image('image1.jpg')
 бинарного изображения с помощью отслеживания границ.
 
 \subsection{Топологический структурный анализ цифрового бинарного
-изображения с помощью отслеживания границ.}
+изображения с помощью отслеживания границ}
 
 Этот метод был разработан Сатоши Сузуки и Кейчи Эйбом в 1985 году
 \cite{satoshi}. Алгоритм предполагает нахождение контуров с учетом
@@ -130,136 +95,8 @@ plot_image('image1.jpg')
 {\tt findContours()} в библиотеке OpenCV, предназначенной для 
 исследования и решения задач, связанных с компьютерным зрением. 
 
-\subsubsection{Обзор функции {\tt findContours()}.}
-
-Сигнатура функции {\tt findContours()}, реализованной в библиотеке
-OpenCV для языка Python выглядит следующим образом:
-
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines,
-				framesep=2mm]{python}
-def findContours(image, mode, method, contours=None, 
-			hierarchy=None, offset=None):
-	pass
-\end{minted}
-
-Опишем каждый из параметров:
-\begin{itemize}
-	\item {\tt image} -- Исходное 8-битное бинарное изображение.
-Для преобразование можно использовать функции {\tt inRange()}, 
-{\tt threshold()}, {\tt adaptiveThreshold()} и ранее использованная 
-функция, реализующая алгоритм Кэнни -- {\tt Canny()}. Если {\tt mode}
-является {\tt RETR\_CCOMP} или {\tt RETR\_FLOODFILL}, то изображение 
-может быть 32-битным.
-	\item {\tt mode} -- Режим поиска контуров. Может принимать 
-следующие значения:
-		\begin{itemize}
-			\item {\tt RETR\_EXTERNAL} -- поиск только внешних
-контуров.
-			\item {\tt RETR\_LIST} -- поиск всех контуров без установки
-их отношения.
-			\item {\tt RETR\_CCOMP} -- поиск всех контуров и
-организация их в иерархию, состоящую из двух уровней: на верхнем уровне
-находится внешние границы компонент, а на втором -- границ "дыр". Если
-внутри "дыры"\ есть другой контур, то он устанавливается на верхнем
-уровне.
-			\item {\tt RETR\_TREE} -- поиск всех контуров и установка
-их иерархии вложенных контуров.
-			\item {\tt RETR\_FLOODFILL}
-		\end{itemize}
-	\item {\tt method} -- Метод аппроксимации контуров. Может принимать
-следующие значения:
-		\begin{itemize}
-			\item {\tt CHAIN\_APPROX\_NONE} -- без аппроксимации, 
-хранятся абсолютно все точки контура. Это означает, что две 
-последовательные точки $(x_1,y_1)$ и $(x_2,y_2)$ контура будут
-либо горизонтальными, либо вертикальными, либо диагональными соседями, 
-то есть $max(|x_1-x_2|, |y_1-y_2|) = 1$.
-			\item {\tt CHAIN\_APPROX\_SIMPLE} -- сжатие горизонтальных, 
-вертикальных и диагональных сегментов, и хранение только их точек
-концов. Например, контур в виде прямоугольника будет описан только его
-четырьмя точками (вершинами).
-			\item {\tt CHAIN\_APPROX\_TC89\_L1} / 
-{\tt CHAIN\_APPROX\_TC89\_KCOS} -- применение двух подходов алгоритма
-Тена и Чина аппроксимации цепи \cite{ten-chin}.
-		\end{itemize}
-	\item {\tt contours} -- Найденные контуры.
-	\item {\tt hierarchy} -- ({\it опционально})  Вектор, хранящий
-информацию о топологии изображения. Количество элементов вектора равно
-количеству найденных контуров. Для каждого $i-$того контура {\tt
-contours[i]} элемент:
-		\begin{itemize}
-			\item {\tt hierarchy[i][0]} = индексу следующего контура 
-на текущем уровне, 
-			\item {\tt hierarchy[i][1]} = индексу предыдущего контура
-на текущем уровне,
-			\item {\tt hierarchy[i][2]} = индексу первого контура на
-на вложенном уровне,
-			\item {\tt hierarchy[i][3]} = индексу родительского
-контура.
-		\end{itemize}
-Если для $i-$того контура нет следующего, предыдущего, родительского 
-и вложенного, то соответствующие элементы являются
-отрицательными.
-	\item {\tt offset} -- ({\it опционально}) Величина сдвига каждой
-точки контура. Полезно, если контуры вычисляются из ROI (англ. Region
-Of Interest, область интереса) изображения и точки контура должны 
-анализироваться в отношении к всему изображению.
-
-\end{itemize}
-
-Для отрисовки контуров, полученных с помощью данной функции, удобно
-пользоваться функцией {\tt drawContours()}. Рассмотрим её поподробнее.
-
-\subsubsection{Обзор функции {\tt drawContours()}.}
-
-Сигнатура функции {\tt findContours()}, реализованной в библиотеке
-OpenCV для языка Python выглядит следующим образом:
-
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines,
-				framesep=2mm]{python}
-def drawContours(image, contours, contourIdx, color, thickness=None,
-		lineType=None, hierarchy=None, maxLevel=None, offset=None):
-	pass
-\end{minted}
-
-Параметры:
-\begin{itemize}
-	\item {\tt image} -- Изображение, на котором будут отрисовываться
-контуры.
-	\item {\tt contours} -- Все контуры.
-	\item {\tt contourIdx} -- Параметр, обозначающий индекс контура
-для отрисовки. Если отрицателен, то будут отрисованы все контуры.
-	\item {\tt color} -- Цвет контуров.
-	\item {\tt thickness} -- Толщина контуров. Если отрицателен, то
-контуры будут закрашены полностью вместе с внутренним пространством.
-	\item {\tt lineType} -- Тип соединения линий ({\tt FILLED}, 
-{\tt LINE\_4}, {\tt LINE\_8}, {\tt LINE\_AA}).
-	\item {\tt hierarchy} -- ({\it опционально}) Информация о иерархии 
-контуров. Необходим, если нужно отрисовать только несколько контуров 
-(см. {\tt maxLevel}).
-	\item {\tt maxLevel} -- Максимальный уровень контуров для
-отрисовки. Если {\tt maxLevel} = 
-	\begin{itemize} 
-		\item 0, то будут отрисованы только специфичные 
-контуры,
-		\item 1, то будут отрисованы все контур(ы) и все в них
-вложенные,
-		\item 2, то функция отрисовывает все контуры, все в них 
-вложенные, все вложенные во вложенные контуры, и так далее. 
-	\end{itemize}
-Этот параметр игнорируется, если не задан параметр {\tt hierarchy}, то
-есть \linebreak{\tt hierarchy = None}.
-	\item {\tt offset} -- ({\it опционально}) Сдвиг контуров для отрисовки:
-$\texttt{offset} = (dx, dy)$
-\end{itemize}
-
-\bigskip
+Для отрисовки контуров, полученных с помощью данной функции, можно воспользоваться
+функцией {\tt drawContours()}.
 
 Поскольку функция {\tt findContours()} находит все контуры на 
 изображении, то нужно среди них выбрать один единственный. 
@@ -268,7 +105,10 @@ $\texttt{offset} = (dx, dy)$
 отбирать тот, {\it площадь} которого имеет наибольшее значение. 
 Площадь контура будем находить с помощью {\it формулы площади Гаусса}.
 
-\subsubsection{Формула площади Гаусса.}
+\addtwoimgherepro{pix/image1}{pix/canny_image1}{Пример работы
+оператора Кэнни.}{canny-img1}{0.3}{0.8}
+
+\subsubsection{Формула площади Гаусса}
 
 Формула площади Гаусса (формула землемера или формула шнурования или
 алгоритм шнурования) — формула определения площади простого
@@ -329,40 +169,8 @@ $y_{n+1}=y_1,~y_0=y_n$.
 Рассмотрим пример использования данных функций. Сравним результат
 поиска контуров с предварительной обработкой изображения, 
 заключающейся в отделении объекта от фона, и без обработки (только с 
-переводом изображения в черно-белый формат). С помощью следующего
-кода получим результаты, представленные на рис. \ref{contours-img-ex}.
-
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines]{python}
-import cv2
-
-def process_image(image):
-    blurred = cv2.GaussianBlur(image, (3, 3), 3)
-    _, thresh1 = cv2.threshold(blurred, 0, 255,
-        cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    return thresh1
-def find_contours_otsu(filename: str, with_processing: bool = False):
-    img = cv2.imread(filename)
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    image_to_contours = process_image(img_gray) if with_processing else img_gray
-    contours, hierarchy = cv2.findContours(image_to_contours.copy(),
-                    cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    print(f'Contours count = {len(contours)}')
-    # находим контур с максимальной площадью
-    cnt = max(contours, key=lambda x: cv2.contourArea(x))
-    print(f'Contour area = {cv2.contourArea(cnt)}')
-    print(f'Points of contour count = {len(cnt)}')
-    cv2.drawContours(img, [cnt], -1, (0, 255, 0), 3)
-    cv2.imwrite('contours_' + 
-      ('processing_' if with_processing else '') 
-      + 'example.png', img)
-find_contours_otsu('image1.jpg')
-find_contours_otsu('image1.jpg', with_processing=True)
-\end{minted}
-
-\newpage
+переводом изображения в черно-белый формат) и 
+получим результаты, представленные на рис. \ref{contours-img-ex}.
 
 \addtwoimghere{pix/contours_otsu_example}
 {pix/contours_otsu_processing_example}

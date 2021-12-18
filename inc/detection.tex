@@ -1,4 +1,4 @@
-\section{Методы детектирование кисти человека в системах человеко-машинного взаимодействия}
+\section{\nohyphens{МЕТОДЫ ДЕТЕКТИРОВАНИЯ КИСТИ ЧЕЛОВЕКА В СИСТЕМАХ ЧЕЛОВЕКО-МАШИННОГО ВЗАИМОДЕЙСТВИЯ}}
 
 Человеко-машинное взаимодействие (Human-computer interaction - HCI) - это междисциплинарное
 научное направление, изучающее взаимодействие между людьми и машинами. Предметом HCI является
@@ -21,11 +21,11 @@
 Рассмотрим первую подзадачу, а именно детектирование кисти человека в кадре.
 
 Существует множество решений этой подзадачи. Наиболее популярными из них являются 
-непосредственное отделение фона изображения, распознавание цвета 
+отделение фона изображения, распознавание цвета 
 кожи в кадре и метод Оцу. 
 Подробно рассмотрим каждое из них.
 
-\subsection{Непосредственное отделение фона изображения}
+\subsection{Отделение фона изображения}
 
 В данном решении принимается, что в кадре движется только рука, а остальные части
 тела, включая фон, остаются неподвижными. Таким образом, если вначале инициализировать фон как
@@ -50,24 +50,8 @@ $bgr(x, y)$, а новое изображение с жестом рассмат
 
 \addtwoimghere{pix/BG_result}{pix/FG_result}{Инициализированный фон (а) и изображение
 кисти на нём (б).}{pix1}
-
-Для отделения кисти первым способом воспользуемся встроенным в библиотеку OpenCV методом
-{\tt absdiff()}, код для которого представлен ниже:
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines,
-				framesep=2mm]{python}
-bg = cv2.imread('BG_result.png') # фон
-fg = cv2.imread('FG_result.png') # фон с кистью
-diff = cv2.absdiff(fg, bg) # вычисляем разность изображений
-mask = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) # переводим в ЧБ
-th = 30
-imask = mask > th
-canvas = np.zeros_like(fg, np.uint8)
-canvas[imask] = fg[imask]
-cv2.imwrite('result.png', canvas) # сохраняем кисть
-\end{minted}
+Для отделения кисти первым способом воспользуемся встроенной в библиотеку OpenCV функцией
+{\tt absdiff()}.
 
 Второй способ будет заключаться в следующем. Пусть даны два пикселя 
 \begin{equation}
@@ -87,27 +71,6 @@ cv2.imwrite('result.png', canvas) # сохраняем кисть
 \end{aligned}\right. 
 \label{bite-mask}
 \end{equation}
-Код для этого метода представлен ниже:
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=4, 
-				frame=lines,
-				framesep=2mm]{python}
-    bg = cv2.imread('BG_result.png')
-    fg = cv2.imread('FG_result.png')
-    def difference(pixel1, pixel2):
-        return math.sqrt((int(pixel1[0]) - int(pixel2[0]))**2 +
-                         (int(pixel1[1]) - int(pixel2[1]))**2 +
-                         (int(pixel1[2]) - int(pixel2[2]))**2)
-
-    THRESHOLD = 60
-    mask = np.zeros_like(bg, np.uint8)
-    for i in range(len(bg)):
-        for j in range(len(bg[i])):
-            mask[i][j] = 1 if \
-            	difference(bg[i][j], fg[i][j]) > THRESHOLD else (0, 0, 0)
-    cv2.imwrite('result1.png', mask)
-\end{minted}
 
 Результаты работы первого и второго метода представлены на рис. \ref{pix2}.
 \addtwoimghere{pix/result}{pix/result1}{Результат первого метода (а) и второго (б).}{pix2}
@@ -119,10 +82,8 @@ cv2.imwrite('result.png', canvas) # сохраняем кисть
 
 \subsection{Метод распознавания кожи в HSV и YCbCr цветовых моделях}
 
-Для того, чтобы исследовать соответствующие методы следует познакомиться
- с цветовыми моделями, которые они используют, поподробнее.
-
-\subsubsection{Цветовая модель HSV}
+Для того, чтобы детектировать цвет кожи на изображениях очень часто применяются 
+различные цветовые модели, а именно HSV и YCbCr.
 
 {\bf HSV} ({\it Hue, Saturation, Value}) или {\bf HSB} ({\it Hue, Saturation, Brightness}) --
 цветовая модель, в которой координатами цвета являются:
@@ -135,146 +96,23 @@ cv2.imwrite('result.png', canvas) # сохраняем кисть
 	\item {\bf V}alue или {\bf B}rightness -- яркость. Также задаётся в пределах 0-100 или 0-1.
 \end{enumerate}
 
-Простейший способ отобразить HSV в трёхмерное пространство -- воспользоваться цилиндрической
-системой координат (рис. \ref{hsv-cylinder}). 
-Здесь координата H определяется полярным углом, S -- радиус-вектором, а V --
-Z-координатой. То есть, оттенок изменяется при движении вдоль окружности цилиндра, насыщенность 
--- вдоль радиуса, а яркость -- вдоль высоты. Несмотря на "математическую"\ точность, у такой
-модели есть существенный недостаток: на практике количество различимых глазом уровней 
-насыщенности и оттенков уменьшается при приближении яркости (V) к нулю. Также на малых S и V 
-появляются существенные ошибки округления при переводе RGB в HSV и наоборот. Поэтому чаще
-применяется коническая модель (рис. \ref{hsv-cone}).
-
-\addimghere{pix/HSV_cylinder}{0.5}{HSV в цилиндрической системе координат.}{hsv-cylinder}
-
-Как и в цилиндре, в конической модели оттенок изменяются по окружности конуса. Насыщенность 
-цвета возрастает с отдалением от оси конуса, а яркость -- с приближением к его основанию. Иногда
-вместо конуса используется шестиугольная правильная пирамида.
-
-\addimghere{pix/HSV_cone}{0.5}{HSV в конической модели.}{hsv-cone}
-
-Для перевода RGB $\Rightarrow$ HSV будем считать, что
-$$
-\begin{aligned}
-	&H \in [0, 360], \\
-	&S, V, R, G, B \in [0, 1].
-\end{aligned}
-$$
-Пусть $MAX=max(R, G, B)$, а $MIN=min(R, G, B)$.
-Тогда
-\begin{equation}
-	H=\left\{\begin{aligned}
-	&60 \cdot \frac{G-B}{MAX-MIN}+0,~ если~MAX=R~и~G \geq B \\
-	&60 \cdot \frac{G-B}{MAX-MIN}+360,~ если~MAX=R~и~G < B \\
-	&60 \cdot \frac{B-R}{MAX-MIN}+120,~ если~MAX=G \\
-	&60 \cdot \frac{R-G}{MAX-MIN}+240,~ если~MAX=B
-\end{aligned}\right. 
-\label{h-in-hsv}
-\end{equation}
-\begin{equation}
-	S=\left\{\begin{aligned}
-	&0,~если~MAX=0, \\
-	&1-\frac{MIN}{MAX},~иначе
-\end{aligned}\right.
-\label{s-in-hsv}
-\end{equation}
-\begin{equation}
-	V=MAX
-	\label{v-in-hsv}
-\end{equation}
-
-Можно заметить, что уравнение (\ref{h-in-hsv}) не определено, когда $MAX=MIN$, поэтому существуют другие
-уравнения:
-\begin{equation}
-	\begin{aligned}
-	&H=\arccos\frac{0.5\cdot((R-G)+R-B)}{\sqrt{(R-G)^2 + (R-B) + (G-B)}} \\
-	&S=1-3\frac{min(R,G,B)}{R+G+B} \\
-	&V=\frac{1}{3}(R+G+B)
-\end{aligned}
-\label{hsv-equations}
-\end{equation}
-
-Для перевода HSV $\Rightarrow$ RGB будем считать, что $H \in [0,360]$, $S \in [0, 100]$ и
-$V \in [0, 100]$. Если
-\begin{equation}
-	\begin{aligned}
-	&H_i = \left\lfloor \frac{H}{60} \right\rfloor~mod~6, \\
-	&V_{min} = \frac{(100-S)V}{100}, \\
-	&a = (V-V_{min})\frac{H~mod~60}{60}, \\
-	&V_{inc} = V_{min} + a, \\
-	&V_{dec} = V-a,
-\end{aligned}
-\label{hsv-to-rgb}
-\end{equation}
-тогда по таблице \ref{rgb-hsv-table} выбираем нужные значения. Полученные значения красного, зелёного
-и синего каналов RGB исчисляются в процентах. Чтобы привести их в соответствие распространённому
-представлению COLORREF необходимо умножить каждое из них на $\displaystyle\frac{255}{100}$.
-При целочисленном кодировании для каждого цвета в HSV есть соответствующий цвет в RGB. Однако
-обратное утверждение не является верным: некоторые цвета в RGB нельзя выразить в HSV так, чтобы
-значение каждого компонента было целым. Фактически, при таком кодировании доступна только
-$\displaystyle\frac{1}{256}$ часть цветового пространства RGB. Пример изображения в HSV
-изображён на рисунке \ref{rgb-hsv-pic}.
-\newpage
-\begin{table}[ht]
-	\centering
-	\begin{tabular}
-		{|c|c|c|c|}
-		\hline $H_i$ & R & G & B \\ \hline 
-		0 & $V$ & $V_{inc}$ & $V_{min}$ \\ \hline 
-		1 & $V_{dec}$ & $V$ & $V_{min}$ \\ \hline 
-		2 & $V_{min}$ & $V$ & $V_{inc}$ \\ \hline 
-		3 & $V_{min}$ & $V_{dec}$ & $V$ \\ \hline 
-		4 & $V_{inc}$ & $V_{min}$ & $V$ \\ \hline 
-		5 & $V$ & $V_{min}$ & $V_{dec}$ \\ \hline 
-	\end{tabular}
-	\caption{Таблица значений RGB для перевода из HSV.}
-	\label{rgb-hsv-table}
-\end{table}
-
-\addtwoimghere{pix/FG_result}{pix/hsv_example}{Изображение в RGB (а) и HSV (б).}{rgb-hsv-pic}
-
-\subsubsection{Цветовая модель YCbCr}
-
-Известно, что органы зрения человека менее чувствительны к цвету предметов, чем к их яркости. В
-цветовом пространстве RGB все три цвета считаются одинаково важными, и они обычно сохраняются
-с одинаковым разрешением. Однако можно отобразить цветное изображение более эффективно, 
-отделив светимость от цветовой информации и представив её с большим разрешением, чем цвет.
-Цветовое пространство $YC_BC_R$ и его вариации является популярным методом эффективного
-представления цветных изображений.
-
-$YC_BC_R$ -- семейство цветовых пространств, которые используются для передачи цветных
+{\bf YCbCr} -- семейство цветовых пространств, которые используются для передачи цветных
 изображений в компонентном видео и цифровой фотографии. Является частью рекомендации 
 МСЭ-R ВT.601 при разработке стандарта видео Всемирной цифровой организации и фактически
 является масштабированной и смещённой копией YUV. 
 
-$Y$ -- компонента яркости, $C_B$ -- синий компонент цветности, $C_R$ -- красный компонент
-цветности.
+{\bf Y} -- компонента яркости, {\bf Cb} -- синий компонент цветности, 
+{\bf Cr} -- красный компонент цветности.
 
-Преобразование RGB $\Rightarrow YC_BC_R$ можно описать следующей
-формулой:
+Пример изображения в HSV изображён на рисунке \ref{rgb-hsv-pic}.
+\addtwoimgherepro{pix/FG_result}{pix/hsv_example}{Изображение в RGB (а) и HSV (б).}
+{rgb-hsv-pic}{0.39}{0.39}
 
-\begin{equation}
-\begin{pmatrix} Y \\ C_B \\ C_R \end{pmatrix}
-=
-\begin{pmatrix} 16 \\ 128 \\ 128 \end{pmatrix} + 
-\begin{pmatrix}
-	65.481 & 128.553 & 24.996\\
-	-37.797 & -74.203 & 112\\
-	112 & -93.786 & -18.214
-\end{pmatrix}
-\cdot
-\begin{pmatrix} R \\ G \\ B\end{pmatrix}
-\label{rgb-to-ycbcr}
-\end{equation}
+Пример изображения в $YC_BC_R$ изображен на рисунке \ref{rgb-ycbcr-pic}.
+\addtwoimgherepro{pix/FG_result}{pix/ycbcr_example}{Изображение в RGB (а) и $YC_BC_R$ (б).}
+{rgb-ycbcr-pic}{0.39}{0.39}
 
-Пример изображения в $YC_BC_R$ изображен на рис. 
-\ref{rgb-ycbcr-pic}.
-
-\addtwoimghere{pix/FG_result}{pix/ycbcr_example}{Изображение в RGB (а) и $YC_BC_R$ (б).}{rgb-ycbcr-pic}
-
-\subsubsection{Использование цветовых моделей RGB и YCrCb для распознавания кожи.}
-
-Для того чтобы отделить кожу от остальной части изображения 
+Для того чтобы отделить кожу от остальной части изображения, 
 используют определённые диапазоны составляющих цветовых моделей, 
 которые находятся эмпирически или итеративно. В первом случае путём 
 проб и ошибок подбираются значения составляющих. Можно заметить,
@@ -289,38 +127,7 @@ $$
 	&80 \leq V \leq 255,
 \end{aligned}
 $$
-и, запустив код ниже с двумя разными изображениями одной и той же
-кисти, получим рис. \ref{hsv-del-pic}.
-
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines,
-				framesep=2mm]{python}
-import cv2
-import numpy as np
-
-LOWER, UPPER = np.array([0, 15, 80], dtype='uint8'), \
-               np.array([200, 255, 255], dtype='uint8')
-
-INPUT_TO_OUTPUT = {'image3.jpg': 'hsv_del1.png',
-                   'image7.jpg': 'hsv_del2.png'}
-
-def HSV_skin_detection_mask_first(image):
-    converted = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    skinMask = cv2.inRange(converted, LOWER, UPPER)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-    skinMask = cv2.erode(skinMask, kernel, iterations=2)
-    skinMask = cv2.dilate(skinMask, kernel, iterations=2)
-    skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
-    return skinMask
-
-
-for filename_input, filename_output in INPUT_TO_OUTPUT.items():
-    img = cv2.imread(filename_input)
-    hsv_mask = HSV_skin_detection_mask_first(img)
-    cv2.imwrite(filename_output, cv2.bitwise_and(img, img, mask=hsv_mask))
-\end{minted}
+и получим результат, представленный на рис. \ref{hsv-del-pic}.
 
 Можно видеть, что на первом изображении фон отделился практически 
 идеально, но на втором видны фрагменты фона.
@@ -351,44 +158,7 @@ for filename_input, filename_output in INPUT_TO_OUTPUT.items():
 	\label{ycbcr-diap2}
 \end{equation}
 
-Выполнив код ниже, получаем сравнение двух методов на рисунке \ref{ycbcr-del-pic}.
-
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines,
-				framesep=2mm]{python}
-import cv2
-
-LOWER_YCr_Cb1, UPPER_YCr_Cb1 = (79, 89, 134), \
-                               (255, 134, 179)
-LOWER_YCr_Cb2, UPPER_YCr_Cb2 = (0, 77, 133), \
-                               (255, 127, 173)
-INPUT_TO_OUTPUT = {'image3.jpg': ['ycbcr_del1_1.png', 'ycbcr_del1_2.png'],
-                   'image7.jpg': ['ycbcr_del2_1.png', 'ycbcr_del2_2.png']}
-
-def YCrCb_skin_detection_mask(image, ex: int):
-    img_YCrCb = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
-    img_YCrCb = cv2.GaussianBlur(img_YCrCb, (5, 5), 5)
-    if ex == 1:
-        skinMask = cv2.inRange(img_YCrCb, LOWER_YCr_Cb1, UPPER_YCr_Cb1)
-    else:
-        skinMask = cv2.inRange(img_YCrCb, LOWER_YCr_Cb2, UPPER_YCr_Cb2)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-    skinMask = cv2.erode(skinMask, kernel, iterations=3)
-    skinMask = cv2.dilate(skinMask, kernel, iterations=3)
-    skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
-    return skinMask
-
-for filename, outputs in INPUT_TO_OUTPUT.items():
-    img = cv2.imread(filename)
-    for i, output in enumerate(outputs):
-        ycrcb_mask = YCrCb_skin_detection_mask(img, i)
-        image_skin = cv2.bitwise_and(img, img, mask=ycrcb_mask)
-        cv2.imwrite(output, image_skin)
-\end{minted}
-
-\newpage
+Сравнение двух вариантов представлено на рисунке \ref{ycbcr-del-pic}.
 
 \addtwoxtwoimghere{pix/ycbcr_del1_1}{pix/ycbcr_del1_2}
 {pix/ycbcr_del2_1}{pix/ycbcr_del2_2}{Изображения с удалённым
@@ -413,112 +183,16 @@ for filename, outputs in INPUT_TO_OUTPUT.items():
 и обработки изображений для получения чёрно-белых изображений. Алгоритм
 позволяет разделить пиксели двух классов ("полезные"\ и "фоновые"), 
 рассчитывая такой порог, чтобы внутриклассовая дисперсия была
-минимальной.
-
-Пусть пиксели изображения представлены в $L$ уровнях серого 
-$[1, 2, ..., L]$. Количество пикселей уровня $i$ обозначим как $n_i$, а
-количество всех пикселей как $$N = n_1 + n_2 + ... + n_L.$$ Для того
-чтобы упростить алгоритм гистограмма монохромного изображения 
-нормализована и рассматривается как распределение вероятностей:
-\begin{equation}
-	p_i=n_i/N,~~~p_i \geq 0,~~\sum_{i=1}^L{p_i}=1.
-	\label{probab}
-\end{equation}
-Теперь предположим, что мы разделили пиксели на два класса $C_0$ и $C_1$ 
-(фон и объект) по пороговому значению $k$. $C_0$ обозначает пиксели с
-уровнями $[1, ..., k]$, а $C_1$ -- пиксели с уровнями $[k+1, ..., L]$.
-Следовательно, вероятности класса и средний уровень, соответственно,
-задаются как
-\begin{equation}
-	\omega_0=\sum^k_{i=1}{p_i}=\omega(k)
-	\label{w_0}
-\end{equation}
-\begin{equation}
-	\omega_1=\sum^L_{i=k+1}{p_i}=1-\omega(k)
-	\label{w_1}
-\end{equation}
-и
-\begin{equation}
-	\mu_0=\sum^k_{i=1}{\frac{ip_i}{\omega_0}}=\frac{\mu(k)}{\omega(k)}
-	\label{mu_0}
-\end{equation}
-\begin{equation}
-	\mu_1=\sum^L_{i=k+1}{\frac{ip_i}{\omega_1}}=\frac{\mu_T-\mu(k)}
-	{1-\omega(k)},
-	\label{mu_1}
-\end{equation}
-где
-\begin{equation}
-	\omega(k)=\sum^k_{i=1}{p_i}
-	\label{omega_k}
-\end{equation}
-и
-\begin{equation}
-	\mu(k)=\sum^k_{i=1}{ip_i}.
-	\label{mu_k}
-\end{equation}
-$\omega(k)$ и $\mu(k)$ являются кумулятивными моментами нулевого и 
-первого порядка соответственно, а
-\begin{equation}
-	\mu_T=\mu(L)=\sum^L_{i=1}{ip_i}
-	\label{mu_T}
-\end{equation}
-является общим средним уровнем изначального изображения. Легко можно
-доказать, что следующие уравнения справедливы для любого $k$:
-\begin{equation}
-	\omega_0\mu_0+\omega_1\mu_1=\mu_T,~~~~\omega_0+\omega_1=1.
-	\label{sum_otsu}
-\end{equation} 
-Дисперсии классов определяются как
-\begin{equation}
-	\sigma_0^2=\sum_{i=1}^k{\frac{(i-\mu_0)^2p_i}{\omega_0}},
-	\label{disp1}
-\end{equation}
-\begin{equation}
-	\sigma_1^2=\sum_{i=k+1}^L{\frac{(i-\mu_1)^2p_i}{\omega_1}}.
-\end{equation}
-Оцу показал, что минимизация дисперсии {\it внутри} класса 
-равносильна максимизации дисперсии {\it между} классами:
-\begin{equation}
-	\sigma_W^2=\omega_0\sigma_0^2+\omega_1\sigma_1^2,
-	\label{sigma_w}
-\end{equation}
-\begin{equation}
-	\sigma_B^2=\omega_0(\mu_0-\mu_T)^2 + \omega_1(\mu_1-\mu_T)^2=
-	\omega_0\omega_1(\mu_1-\mu_0)^2,
-	\label{sigma_B}
-\end{equation}
-и
-\begin{equation}
-	\sigma_T^2=\sum^L_{i=1}{(i-\mu_T)^2p_i}
-\end{equation}
-являющееся внутриклассовой дисперсией, дисперсия между классами и общая
-дисперсия всех уровней соответственно.
-Таким образом, алгоритм можно записать как:
-
-Пусть дано монохромное изображение $G(i,j)$, $i=\overline{1, Height}$,
-$j=\overline{1,Width}$. Счётчик повторений $k=0$.
-\begin{enumerate}
-	\item Вычислить гистограмму $p(l)$ изображения и частоту $N(l)$ для
-каждого уровня интенсивности изображения $G$.
-	\item Вычислить начальные значения для $\omega_0(0),\omega_1(0)$ и 
-$\mu_1(),\mu_2(0)$.
-	\item Для каждого значения $t=\overline{1,max(G)}$ -- полутона --
-горизонтальная ось гистограммы:
-	\begin{enumerate}
-		\item Обновляем $\omega_0,\omega_1$ и $\mu_0,\mu_1$.
-		\item Вычисляем $\sigma_B^2(t)=\omega_0(t)\omega_1(t)[\mu_0(t)-
-\mu_1(t)]^2$.
-		\item Если $\sigma_B^2(t)$ больше, чем имеющееся, то запоминаем
-$\sigma_B^2$ и значение порога $t$.
-	\end{enumerate}
-	\item Искомый порог соответствует максимуму $\sigma_B^2(t)$.
-\end{enumerate}
+минимальной. Для того чтобы упростить алгоритм, используется
+гистограмма монохромного изображения.
  
-Диаграммы для изображений изображены на рис. \ref{histograms}. Как видно из рисунков, на данных изображениях довольно
+Диаграммы для изображений изображены на рис. \ref{histograms}. 
+Как видно из рисунков, на данных изображениях довольно
 проблематично отделить фон от изображения какой-то единственной 
 пороговой величиной, поэтому и алгоритм Оцу на таких изображениях 
-сработает не очень хорошо, как это показано на рис. \ref{otsu-ex}.
+сработает не очень хорошо, как это показано на рис. \ref{otsu-ex}. 
+Реализация данного алгоритма и построение гистограмм изображений
+находятся в приложении А.
 
 \addimgsandhistshere{pix/image3}{pix/histogram_for_3}
 {pix/image7}{pix/histogram_for_7}{Изображение 1 и 2
@@ -528,243 +202,29 @@ $\sigma_B^2$ и значение порога $t$.
 
 \addtwoimghere{pix/otsu_exmpl_for_3}{pix/otsu_exmpl_for_7}{Результат работы программы с алгоритмом Оцу}{otsu-ex}
 
-\subsection{Рекурсивные методы построения модели фона}
-
-\subsubsection{Visual Background Extractor.}
-
-Универсальным и наиболее совершенным на данный момент адаптивным методом,
-показывающим очень хорошие результаты практически для любых ситуация и
-освещений, а также значительно выигрывающим в скорости работы по сравнению с
-другими алгоритмами, показывающими приблизительно такое же качество поиска
-движущихся объектов, считается {\it Visual Background Extractor} 
-\cite{van-vibe}.
-
-Классическим принципом работы большинства активно использующихся современных 
-адаптивных методов является построение для каждого пикселя кадра функции
-плотности вероятности. ViBe основывается на принципиально другой идее:
-к вопросу об интенсивности (в общем случае о цвете) пикселя $p=(x,y)$ 
-подходят как к вопросу классификации. Для каждого пикселя сохраняется 
-некоторое количество $N$ его предыдущих значений $\nu(p)$, не обязательно
-последовательных (чаще всего полагают $N=20$). Тогда можно сказать, что для
-каждого пикселя текущего кадра будет иметься своя модель $C$, которая
-представляется следующим множеством:
-\begin{equation}
- C(p)=\{ \nu_1(p), \ldots, \nu_N(p) \}
- \label{vibe-equat1}
-\end{equation}
-
-После этого осуществляется классификация пикселя с целью либо выявить движение,
-либо отнести данный пиксель к фону. В общем случае для этого в цветовом 
-пространстве для пикселя $p$, значение которого на текущем кадре обозначим
-через $\nu_n(p)$, где $n$ -- номер текущего кадра, строится сфера
-$S_R(\nu_n(p)$ заранее определённого радиуса $R$ (рис. \ref{vibe-img}) и
-определяется количество значений $K_n$ значений из $C_n(p)$, попадающих
-в эту сферу:
-\begin{equation}
-	K_n(p)= |S_R(\nu_n(p)) \cap C_n(p)|.
-	\label{vibe-equat2}
-\end{equation}
-
-\addimghere{pix/vibe_img_1}{0.5}{Сфера в цветовом пространстве}{vibe-img}
-
-В случае, когда изображения предварительно переводятся в градации серого,
-значения $\nu(p)$ представляют характеризующий интенсивность серого цвета 
-скаляр, а не вектор, и для вычисления количества $K_n$ "близких"\ 
-значению $\nu_n(p)$ элементов из $C_n(p)$ необходимо просто осуществить
-следующую проверку для каждого из данных элементов:
-\begin{equation}
-	|\nu(p) - \nu_n(p)| < R.
-	\label{vibe-equat-3}
-\end{equation}
-
-Решающее правило для текущего кадра строится следующим образом:
-если $K_n > K_{min}$, где $K_{min}$ обычно принимается много меньше, чем $N/2$,
-пиксель $p$ на текущем кадре принимается за фоновый, иначе предполагают, что он
-принадлежит движущемуся объекту. Стоит отметить, что в формулах 
-(\ref{vibe-equat-2}), (\ref{vibe-equat-3}) можно осуществлять проверку не для
-всех элементов $C_n(p)$, а только до тех пор, пока не найдём $K_{min}$ 
-попадающих в сферу (в общем случае).
-
-После этого для каждого пикселя необходимо обновить его модель. Этот процесс
-представляет из себя два последовательных шага:
-\begin{enumerate}
-	\item Если $p$ был отнесён к фону, из $C_n(p)$ случайным образом
-выбирается элемент, который будет заменён на $\nu_n(p)$.
- 	\item Из окрестности $O(p)$ размера $3\times 3$ (9 пикселей с учётом $p$)
-случайным образом выбирается пиксель, случайный элемент модели которого также
-будет заменён на $\nu_n(p)$.
-\end{enumerate}
-
-Кроме самого процесса обновления модели фона отличительной особенностью ViBe 
-также является процесс её инициализации. Для многих алгоритмов она
-производится случайным образом, однако ViBe старается построить наиболее
-точную модель как можно раньше. С этой целью инициализация модели каждого
-пикселя производится так:
-\begin{equation}
-	C_0(p) = \{ \nu(z), z \in O(p)\}.
-	\label{vibe-equat-4}
-\end{equation}
-
-Здесь пиксель $z$ выбирается $N$ раз случайным образом. Такой процесс позволяет
-получить достаточно хорошую модель фона уже для второго кадра видео.
-
-Несмотря на все достоинства и простоту реализации, достаточно часто приходится
-искать альтернативу данному алгоритму, так как он защищен множеством патентов.
-
-\subsubsection{Mixture of Gaussians.}
+\subsection{Mixture of Gaussians}
 
 Стандартным подходом к построению модели фона, использующимся для многих
 прикладных задач, является смесь гауссовых распределений (Mixture of Gaussians,
-MOG) \cite{MOG-1, MOG-2}. Как упоминалось выше, чаще всего для каждого пикселя
+MOG) \cite{MOG-1, MOG-2}. Чаще всего для каждого пикселя
 текущего кадра с номером $n$ строится функция плотности вероятности 
 $P_n=P(\nu_n(p))$, и MOG используется именно этот подход. Предполагается, что 
 для каждого пикселя текущего изображения она может быть представлена смесью
 нормальных распределений, где $G$ -- их число в смеси.
-Обозначим за $w_i^n$ вес распределения Гаусса с номером $i$, $E_i^n$ -- его
-математическое ожидание и $\sum^n_i$ -- среднеквадратичное отклонение.
-Тогда для $P_n$ получим:
-\begin{equation}
-	P_n = \sum_{i=1}^G{w_i^n} \cdot N(\nu_n(p)|E^n_i, \sum_i^n).
-	\label{mog-equat-1}
-\end{equation} 
-
-Здесь в общем случае $N(\nu_n(p)|E^n_i, \sum_i^n)$ -- многомерное 
-нормальное распределение, имеющее вид:
-\begin{equation}
-	N(\nu_n(p)|E^n_i, \sum_i^n) = 
-	\frac{1}{(2\pi)^{H/2}|\sum_i^n|^{1/2}}
-	\exp[-\frac{1}{2}(\nu_n(p) - E_i^n)^T) \cdot (\sum^n_i)^{-1} 
-	\cdot (\nu_n(p) - E^n_i)],
-	\label{mog-equat-2}
-\end{equation} 
-где
-
-$H$ -- число компонентов цвета,
-
-$\sum$ -- матрица ковариации.
-
-Для ускорения вычислений, чтобы не вычислять обратную матрицу в формуле 
-(\ref{mog-equat-2}), в случае цветного изображения предполагается, что для
-компонентов цвета соблюдается их независимость, а также что они имеют 
-одинаковое стандартное отклонение. Тогда матрица ковариации примет вид:
-\begin{equation}
-	\sum_i^n= (\sigma_i^n) \cdot E,
-	\label{mog-equat-3}
-\end{equation}
-где $E$ -- единичная матрица размерности $H$.
-
-После того, как для всех пикселей получена смесь, для каждой из них производится
-сортировка распределений по убыванию величины $\frac{w^n_i}{\sigma^n_i}$.
-Это делается для того, чтобы фоновые пиксели отвечали распределению с маленькой 
-дисперсией и большим весом. Тогда число $J$ первых гауссиан, соответствующих
-распределению цвета фона для пикселя $p$, будет определяться из условия:
-\begin{equation}
-	J=arg~{min}_a(\sum^a_{i=0}{w^n_i}>A),
-	\label{mog-equat-4}
-\end{equation} 
-где $A$ -- некоторый порог.
-
-Решающее правило для текущего кадра выглядит следующим образом: для каждого
-пикселя определяют, какому из распределений смеси принадлежит его значение
-$\nu_{n+1}(p)$, используя расстояние Махаланобиса:
-\begin{equation}
-	\sqrt{
-	(\nu_{n+1}(p)-E^n_i)^T \cdot (\sum_i^n)^{-1} \cdot 
-	(\nu_{n+1}(p) - E^n_i)} < 2.5 \cdot \sigma^n_i.
-	\label{mahalabobis}
-\end{equation}
-
-После этого возможно два случая:
-\begin{enumerate}
-	\item Распределение нашлось. Пиксель будет отнесён к фону, если эта
-гауссиана является одной из $J$ первых. В противном случае он будет отнесён
-к движущемуся объекту.
-	\item Если они одной гауссианы не нашлось, то пиксель также относят
-к движущемуся объекту.
-\end{enumerate}
-
-Теперь рассмотрим, как для пикселя $p$ со значением $\nu_{n+1}(p)$
-происходит обновление параметров его модели. Как и при принятии решения,
-относится ли пиксель к фону или нет, здесь также можно быть два случая.
-Не существует единого понимания того, каким образом следует вычислять новые
-параметры, поэтому рассмотрим здесь один из наиболее популярных:
-\begin{enumerate}
-	\item Распределение нашлось. Происходит обновление его параметров и веса.
-Если нашлось более одного распределения, данный процесс выполняется для каждого
-из них:
-$$w^{n+1}_i = (1-\alpha) \cdot w^n_i + \alpha, $$
-$$ E^{n+1}_i = (1-g)\cdot E^n_i + g \cdot \nu_{n+1}(p), $$
-$$ (\sigma_i^{n+1})^2 = (1-g)\cdot (\sigma_i^n)^2 + 
-g \cdot (\nu_{n+1}(p) - E_i^{n+1}) \cdot (\nu_{n+1}(p) - E^{n+1}_i)^T, $$
-$$ g=\alpha \cdot N(\nu_n(p)|E_i^n, \sum_i^n). $$
-В этих формулах $\alpha$ -- заданная
-константа.
-
-Для всех остальных распределений в смеси пересчитываются только веса:
-$$ w^{n+1}_i=(1-\alpha) \cdot w^n_i.$$
-	\item Распределение в смеси не нашлось. Тогда самую последнюю в уже 
-отсортированной смеси гауссиану заменяют новой: $E^{n+1}_G=\nu_{n+1}(p)$,
-дисперсия -- максимально возможная, а вес -- минимально допустимый.
-\end{enumerate}
 
 Для инициализации гауссиан для каждого пикселя чаще всего применяют либо
 EM-алгоритм (Expectation-maximization algorithm), либо k-means, что
 достаточно затратно в вычислительном плане. Число входящих в смесь распределений
 $G$ обычно принимают равным от 3 до 5. Также существует подход, позволяющий
-автоматически подбирать необходимое количество гауссиан \cite{MOG-3}. 
+автоматически подбирать необходимое количество гауссиан \cite{MOG-2}. 
 
 В библиотеке OpenCV данный метод реализуется с помощью встроенной функции
 {\tt createBackgroundSubtractorMOG2()}. Данная функция обучается на изображениях
 каждого кадра и лучше всего работает в режиме последовательности, то есть на
-видео. Написав следующий код, получим результат, представленный на рисунке
+видео. Результат работы метода MoG представлен на рисунке
 \ref{mog-example-img}.
 
-\begin{minted}[mathescape, 
-				linenos, 
-				gobble=0, 
-				frame=lines,
-				framesep=2mm]{python}
-import cv2
-import numpy as np
-
-subtractor = cv2.createBackgroundSubtractorMOG2()
-capture = cv2.VideoCapture(0)
-
-def remove_bg(frame, fgMask):
-    kernel = np.ones((3, 3), np.uint8)
-    fgmask = cv2.erode(fgMask, kernel, iterations=1)
-    res = cv2.bitwise_and(frame, frame, mask=fgmask)
-    return res
-
-def learn_and_capture(is_learn=False, is_capture=False):
-    # обучение на фоне
-    while True:
-        ret, frame = capture.read()
-        while frame is None:
-            print("Try to read")
-            ret, frame = capture.read()
-        if is_learn:
-            fgMask = subtractor.apply(frame)
-            cv2.rectangle(frame, (10, 2), (100, 20), (255, 255, 255), -1)
-            # cv2.imshow('Frame', frame)
-            removed_bg = remove_bg(frame, fgMask)
-            cv2.imshow('result', removed_bg)
-        elif is_capture:
-            cv2.imshow('Capture frame. Press esc', frame)
-        else:
-            raise RuntimeError('Illegal arguments in function!')
-        keyboard = cv2.waitKey(500)
-        if keyboard == 'q' or keyboard == 27:
-            break
-    if is_capture:
-        return frame
-
-learn_and_capture(is_learn=True)
-frame = learn_and_capture(is_capture=True)
-fgMask = subtractor.apply(frame)
-removed_bg = remove_bg(frame, fgMask)
-cv2.imwrite('mog_result.png', removed_bg)
-\end{minted}
+\newpage
 
 \addimghere{pix/mog_result}{1}
 {Результат отделения фона от изображения с помощью метода MoG.}{mog-example-img}
