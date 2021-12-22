@@ -14,6 +14,7 @@
 \usepackage[pdftex]{graphicx}
 \usepackage{titlesec}
 \usepackage[title,titletoc]{appendix}
+\usepackage{titletoc}
 
 \usepackage{amsfonts}           % греческие символы и, возможно, что-то ещё
 \usepackage{indentfirst}        % одинаковый отступ для первого параграфа и всего остального
@@ -192,8 +193,8 @@
 }
 
 \addto\captionsrussian{
-\def\refname{СПИСОК ИСПОЛЬЗОВАННОЙ ЛИТЕРАТУРЫ}
-\def\contentsname{СОДЕРЖАНИЕ}
+\def\refname{\begin{center}СПИСОК ИСПОЛЬЗОВАННОЙ ЛИТЕРАТУРЫ \end{center}}
+\def\contentsname{\begin{center} СОДЕРЖАНИЕ \end{center}}
 }
 
 %
@@ -221,7 +222,7 @@
 %
 %% Секции без номеров (введение, заключение...), вместо section*{}
 \newcommand{\anonsection}[1]{
-\section*{#1}
+\section*{\centering #1}
 \addcontentsline{toc}{section}{#1}
 }
 
@@ -234,21 +235,21 @@
 %}
 %
 %% Библиография: отступы и межстрочный интервал
-%\makeatletter
-%\renewenvironment{thebibliography}[1]
-%    {\section*{\refname}
-%        \list{\@biblabel{\@arabic\c@enumiv}}
-%           {\settowidth\labelwidth{\@biblabel{#1}}
-%            \leftmargin\labelsep
-%            \itemindent 16.7mm
-%            \@openbib@code
-%            \usecounter{enumiv}
-%            \let\p@enumiv\@empty
-%            \renewcommand\theenumiv{\@arabic\c@enumiv}
-%        }
-%        \setlength{\itemsep}{0pt}
-%    }
-%\makeatother
+\makeatletter
+\renewenvironment{tableofcontents}[1]
+    {\section*{\refname}
+        \list{\@biblabel{\@arabic\c@enumiv}}
+           {\settowidth\labelwidth{\@biblabel{#1}}
+            \leftmargin\labelsep
+            \itemindent 16.7mm
+            \@openbib@code
+            \usecounter{enumiv}
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}
+        }
+        \setlength{\itemsep}{0pt}
+    }
+\makeatother
 
 \usepackage{listings}
 \usepackage{color}
